@@ -143,7 +143,7 @@ def read_longitude(default_longitude=None, prompt=LONGITUDE_PROMPT, format=LONGI
         else:
             try:
                 lng = float(res)
-                if abs(lng) <= 360.0:
+                if abs(lng) <= 180.0:
                     return lng
             except Exception:
                 pass
@@ -172,7 +172,7 @@ def read_zone_correction(default_zone_correction=None, prompt=ZONE_CORRECTION_PR
         else:
             try:
                 zc = int(res)
-                if abs(zc) <= 24:
+                if abs(zc) <= 12:
                     return zc
             except Exception:
                 pass

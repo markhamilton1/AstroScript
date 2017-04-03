@@ -447,7 +447,7 @@ def to_time_tuple_from_hours(dhours):
     if dhours is not None:
         hour = int(dhours)
         dmins = abs(dhours - hour) * 60
-        min = int(dmins)
+        min = int(dmins + 0.0005)    # add a tiny amount to make sure the minutes round properly
         sec = (dmins - min) * 60
         return hour, min, fix(sec, TIME_SECONDS_PRECISION)
     raise ValueError, "Invalid decimal hours!"
