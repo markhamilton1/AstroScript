@@ -1,5 +1,25 @@
 import astrodate
 
+"""
+In precise astronomical timekeeping, deltaT (Delta T, delta-T, deltaT, or DT) is the time difference obtained by
+subtracting Universal Time (UT) from Terrestrial Time (TT): deltaT = TT - UT.
+
+All values of deltaT before 1955 depend on observations of the Moon, either via eclipses or occultations. The angular
+momentum lost by the Earth due to friction induced by the Moon's tidal effect is transferred to the Moon,
+increasing its angular momentum, which means that its moment arm (its distance from the Earth) is increased (for
+the time being about +3.8 cm/year), which via Kepler's laws of planetary motion causes the Moon to revolve around
+the Earth at a slower rate.
+
+Universal Time (UT) is a time scale based on the Earth's rotation, which is somewhat irregular over short periods (days
+up to a century).
+
+Terrestrial Time (TT) is a theoretical uniform time scale, defined to provide continuity with the former Ephemeris
+Time (ET). ET was an independent time-variable, proposed (and its adoption agreed) in the period 1948-52 with
+the intent of forming a gravitationally uniform time scale as far as was feasible at that time, and depending
+for its definition on Simon Newcomb's Tables of the Sun (1895), interpreted in a new way to accommodate certain
+observed discrepancies.
+"""
+
 # deltat historical data - ftp://maia.usno.navy.mil/ser7/deltat.data
 # deltat predictions - ftp://maia.usno.navy.mil/ser7/deltat.preds
 
@@ -97,11 +117,14 @@ DELTA_T_ISLAM_SADIQ_QURESHI_POLYNOMIALS = (
     (1990, 2000, (60.798, 81.694, -174.854, -4823.23, -2039.63), lambda year: 0.05 + ((year - 2000.0) / 100.0))
 )
 
-# Calculate delta-t using a polynomial set.
-# polys=the polynomial set to use
-# dat=the date to calculate for
-# returns delta-t in seconds (None=not available)
+
 def calc_dt_poly(polys, dat):
+    """
+    Calculate the value of dalta-t from a polynomial equation.
+    :param polys: the list of polynomial coefficients to use
+    :param dat: the date tuple to use for the calculation
+    :return: the value of delta-t
+    """
     if polys and dat:
         for poly in polys:
             if poly[0] <= dat[0] < poly[1]:
@@ -114,13 +137,33 @@ def calc_dt_poly(polys, dat):
                 return dt
     return None
 
-# Calculate delta-t from a table of historic values.
-# dat=the date to calculate for
-# returns delta-t in seconds (None=not available)
+
+def calc_dt(year, jde):
+    if (year < DATE_TD_YEAR_MIN - 70) or (year > DATE_TD_YEAR_MAX + 70):
+        dy = jde - 2382148.0
+        dt = ((dy * dy) / 41048480.0) - 15.0
+    elif year < DATE_TD_YEAR_MIN:
+        m = (DATE_DELTA_T_VALUES[1] - DATE_DELTA_T_VALUES[0]) / 2.0
+        dt = ((year - DATE_TD_YEAR_MIN) * m) + DATE_DELTA_T_VALUES[0]
+    elif year > DATE_TD_YEAR_MAX:
+        last = (DATE_TD_YEAR_MAX - DATE_TD_YEAR_MIN) / 2
+        m = (DATE_DELTA_T_VALUES[last] - DATE_DELTA_T_VALUES[last - 1]) / 2.0
+        dt = ((year - DATE_TD_YEAR_MAX) * m) + DATE_DELTA_T_VALUES[last]
+    else:
+        i = year - DATE_TD_YEAR_MIN
+        dt = DATE_DELTA_T_VALUES[i]
+    return dt
+
+
 def calc_dt_interp(dat):
+    """
+    Calculate the value for delta-t by interpolating with values from a table of historic values.
+    :param dat: the date tuple to use for the interpolation
+    :return: the value for dalta-t
+    """
     if dat:
         if (dat[0] < DATE_TD_YEAR_MIN - 70) or (dat[0] > DATE_TD_YEAR_MAX + 70):
-            julian = astrodate.to_julian_from_date_tuple(dat)
+            julian = astrodate.calculate_julian(dat[0], dat[1], dat[2])
             dy = julian - 2382148.0
             dt = ((dy * dy) / 41048480.0) - 15.0
         elif dat[0] < DATE_TD_YEAR_MIN:
@@ -137,11 +180,12 @@ def calc_dt_interp(dat):
     return None
 
 
-
-# Compare the polynomial generated delta-t values to those interpolated from historical data.
-# This method produces a table of values and their absolute error followed by a summary of the
-# errors for the polynomial sets.
 def show_delta_t_with_errors():
+    """
+    Perform a comparison of polynomial generated values of delta-t with those interpolated from historical values.
+    This method produces a table of values and their absolute error followed by a summary of the errors for the
+    polynomial sets.
+    """
     polynomial_sets = (
         ("Meeus Polynomials", DELTA_T_MEEUS_POLYNOMIALS),
         ("Montenbruck Pfleger Polynomials", DELTA_T_MONTENBRUCK_PFLEGER_POLYNOMIALS),
@@ -181,6 +225,11 @@ def show_delta_t_with_errors():
 
 # Calculate the error for a single polynomial from a set.
 def calc_error_summary(poly):
+    """
+    Calculate the error for a single polynomial from a set.
+    :param poly: the polynomial to use
+    :return: max error, average error
+    """
     if poly:
         max_ae = 0.0
         sum_ae = 0.0
@@ -199,10 +248,11 @@ def calc_error_summary(poly):
                 max_ae = ae
             sum_ae += ae
             n += 1
-        return (max_ae, (sum_ae / n))
+        return max_ae, (sum_ae / n)
     return None
 
 
 if __name__ == "__main__":
+
 
     show_delta_t_with_errors()

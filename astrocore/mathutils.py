@@ -8,7 +8,8 @@ def fix(v, prec):
     :param prec:    the precision to fix the value to (number of digits after the decimal)
     :return:        the fixed value
     """
-    if prec >= 0:
+    v = to_float(v, None)
+    if (v is not None) and (prec >= 0):
         sf = pow(10.0, prec)
         v = int((float(v) * sf) + 0.5)
         v = float(v) / sf
@@ -40,33 +41,35 @@ def make_int_readable(s):
         d = s
     return "{:,d}".format(d)
 
-def normalize_degrees(dgs, max=360):
+def normalize_float(f, min_f, max_f):
+    diff_f = max_f - min_f
+    while f >= max_f:
+        f -= diff_f
+    while f < min_f:
+        f += diff_f
+    return f
+
+def normalize_degrees(dgs, min_d=0, max_d=360):
     """
     Normalize a value (in degrees).
     
     :param dgs:    the value to normalize
-    :param max:    the maximum value (defaults to 360)
+    :param min_d:  the minimum value (defaults to 0)
+    :param max_d:  the maximum value (defaults to 360)
     :return:       the normalized value
     """
-    while dgs >= max:
-        dgs -= max
-    while dgs <= -max:
-        dgs += max
-    return dgs
+    return normalize_float(dgs, min_d, max_d)
 
-def normalize_hours(hrs, max=24):
+def normalize_hours(hrs, min_h=0, max_h=24):
     """
     Normalize a value (in hours).
     
     :param hrs:    the value to normalize
-    :param max:    the maximum value (defaults to 24)
+    :param min_h:  the minimum value (defaults to 0)
+    :param max_h:  the maximum value (defaults to 24)
     :return:       the normalized value
     """
-    while hrs >= max:
-        hrs -= max
-    while hrs < 0:
-        hrs += max
-    return hrs
+    return normalize_float(hrs, min_h, max_h)
     
 def pick_float(collection, index, defaultValue=None):
     """

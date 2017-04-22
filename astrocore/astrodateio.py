@@ -1,6 +1,8 @@
 
 import astrodate
+import mathutils
 import sio
+import time
 
 DATE_DELIMITER = ','
 DATE_PROMPT = "Enter a date"
@@ -25,6 +27,26 @@ ZONE_CORRECTION_HELP = "No help available."
 ZONE_CORRECTION_INVALID = "The entered zone correction is invalid!"
 
 
+def __convert_date_time(res):
+    """
+    Convert the response array (usually from keyboard input) into a date time tuple.
+
+    :param res: the response to convert
+    :return:    an unvalidated date time tuple
+    """
+    dat = []
+    i = 0
+    while (i < len(res)) and (i < 7):
+        if i < 5:
+            dat.append(mathutils.to_int(res[i]))
+        elif i == 5:
+            dat.append(mathutils.fix(res[i], astrodate.TIME_SECONDS_PRECISION))
+        else:
+            dat.append(res[i])
+        i += 1
+    return dat
+
+
 def print_pretty_date(label, dat, newline=True):
     """
     Print the date date tuple as a properly formatted date string
@@ -33,9 +55,10 @@ def print_pretty_date(label, dat, newline=True):
     :param dat:     the date tuple to use
     :param newline: a boolean indicating if a newline should be added
     """
-    s = astrodate.to_pretty_date(dat)
+    s = dat.to_pretty_date(dat)
     if s:
         sio.print_labeled_text(label, s, newline=newline)
+
 
 def read_date(default_date=None, prompt=DATE_PROMPT, format=DATE_FORMAT):
     """
@@ -55,15 +78,26 @@ def read_date(default_date=None, prompt=DATE_PROMPT, format=DATE_FORMAT):
             sio.print_text(DATE_HELP)
             sio.print_newline()
         elif (type(res) is str) and (len(res) == 1) and (res[0] == '*'):
-            return now()
+            current = time.time()
+            dat = time.gmtime(current)
+            #   dat = (year, month, day, hour, min, sec, weekday, julian day, daylight savings flag)
+            year = dat[0]
+            month = dat[1]
+            day = dat[2]
+            hours = dat[3]
+            minutes = dat[4]
+            seconds = mathutils.fix(dat[5], astrodate.TIME_SECONDS_PRECISION)
+            mode = astrodate.TIME_MODE_UT
+            return year, month, day, hours, minutes, seconds, mode
         else:
-            dat = astrodate._convert_date_time(res)
+            dat = __convert_date_time(res)
             if not astrodate.validate_date(dat, False):
                 sio.print_newline()
                 sio.print_text(DATE_INVALID)
                 sio.print_newline()
             else:
-                return dat
+                return tuple(dat)
+
 
 def read_datetime(default_datetime=None, prompt=DATETIME_PROMPT, format=DATETIME_FORMAT):
     """
@@ -83,15 +117,26 @@ def read_datetime(default_datetime=None, prompt=DATETIME_PROMPT, format=DATETIME
             sio.print_text(DATETIME_HELP)
             sio.print_newline()
         elif (type(res) is str) and (len(res) == 1) and (res[0] == '*'):
-            return now()
+            current = time.time()
+            dat = time.gmtime(current)
+            #   dat = (year, month, day, hour, min, sec, weekday, julian day, daylight savings flag)
+            year = dat[0]
+            month = dat[1]
+            day = dat[2]
+            hours = dat[3]
+            minutes = dat[4]
+            seconds = mathutils.fix(dat[5], astrodate.TIME_SECONDS_PRECISION)
+            mode = astrodate.TIME_MODE_UT
+            return year, month, day, hours, minutes, seconds, mode
         else:
-            dat = astrodate._convert_date_time(res)
+            dat = __convert_date_time(res)
             if not astrodate.validate_date(dat, True):
                 sio.print_newline()
                 sio.print_text(DATETIME_INVALID)
                 sio.print_newline()
             else:
-                return dat
+                return tuple(dat)
+
 
 def read_latitude(default_latitude=None, prompt=LATITUDE_PROMPT, format=LATITUDE_FORMAT):
     """
@@ -122,6 +167,7 @@ def read_latitude(default_latitude=None, prompt=LATITUDE_PROMPT, format=LATITUDE
             sio.print_text(LATITUDE_INVALID)
             sio.print_newline()
 
+
 def read_longitude(default_longitude=None, prompt=LONGITUDE_PROMPT, format=LONGITUDE_FORMAT):
     """
     Read a longitude.
@@ -150,6 +196,7 @@ def read_longitude(default_longitude=None, prompt=LONGITUDE_PROMPT, format=LONGI
             sio.print_newline()
             sio.print_text(LONGITUDE_INVALID)
             sio.print_newline()
+
 
 def read_zone_correction(default_zone_correction=None, prompt=ZONE_CORRECTION_PROMPT, format=ZONE_CORRECTION_FORMAT):
     """

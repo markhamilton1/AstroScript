@@ -1,24 +1,12 @@
-"""
-Support for astronomical date/time calculations.
-
-A date or date time is represented as a tuple of the form (year, month, day[, hours, minutes, seconds[, mode]])
-where the time is optional or the mode is optional.
-
-Example 1:
-(1980, 4, 22, 19, 36, 51.67, 'lct') represents the Local Civil Time of 19:36:51.67 on date April 22, 1980.
-
-Example 2:
-(1980, 4, 22) represents the date April 22, 1980.
-Due to the lack of a time in this date time it cannot be used in a time conversion.
-
-Example 3:
-(1980, 4, 22, 19, 36, 51.67) represents the time of 19:36:51.67 on date April 22, 1980.
-Due to the ambiguous nature of this date time it cannot be used in a time conversion.
-"""
-
-import time
 import deltat
-from mathutils import *
+import math
+import mathutils
+import time
+
+
+J1900 = 2415020.0			# corresponding to 1900 January 1 12:00:00 TDT
+J1950 = 2433283.0           # corresponding to 1950 January 1 12:00:00 TDT
+J2000 = 2451545.0			# corresponding to 2000 January 1 12:00:00 TDT
 
 DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 LENGTH_OF_MONTH = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -28,539 +16,920 @@ TIME_MODE_TD = u"td"
 TIME_MODE_LST = u"lst"
 TIME_MODE_GST = u"gst"
 TIME_MODES = [TIME_MODE_LCT, TIME_MODE_UT, TIME_MODE_TD, TIME_MODE_GST, TIME_MODE_LST]
-DAYLIGHT_SAVINGS = True
-ZONE_CORRECTION = 0     # - for west, + for east
-LONGITUDE = 0           # - for west, + for east
-LATITUDE = 0            # + for north, - for south
 DATETIME_PRINT_FORMAT = '%b %d, %Y %H:%M:%S'
 TIME_SECONDS_PRECISION = 2
+SECONDS_MAX = None
 
-def _convert_date_time(res):
-    """
-    Convert the response array (usually from keyboard input) into a date time tuple.
 
-    :param res: the response to convert
-    :return:    an unvalidated date time tuple
+def calculate_julian(yr, mth, day, hrs=None, mns=None, scs=None):
     """
-    dat = []
-    i = 0
-    while (i < len(res)) and (i < 7):
-        if i < 5:
-            dat.append(int(res[i]))
-        elif i == 5:
-            dat.append(fix(res[i], TIME_SECONDS_PRECISION))
+    Calculate the julian date value.
+    :param yr:  the year
+    :param mth: the month
+    :param day: the day
+    :param hrs: the hours
+    :param mns: the minutes
+    :param scs: the seconds
+    :return: the julian date
+    """
+    yr = mathutils.to_int(yr)
+    mth = mathutils.to_int(mth)
+    day = mathutils.to_int(day)
+    hrs = mathutils.to_int(hrs)
+    mns = mathutils.to_int(mns)
+    scs = mathutils.to_float(scs)
+    if mth <= 2:
+        yr -= 1
+        mth += 12
+    if yr >= 1582:
+        A = yr / 100
+        B = 2 - A + (A / 4)
+    else:
+        B = 0
+    if yr < 0:
+        C = int((365.25 * yr) - 0.75)
+    else:
+        C = int(365.25 * yr)
+    D = int(30.6001 * (mth + 1))
+    return 1720994.5 + B + C + D + day + ((((mathutils.fix(scs, TIME_SECONDS_PRECISION) / 60.0) + float(
+        mns)) / 60.0) + float(
+        hrs)) / 24.0
+
+
+def dh_from_hms(h, m, s):
+    """
+    Converts a time to decimal hours.
+    :param h: hours
+    :param m: minutes
+    :param s: seconds
+    :return:  dh
+    """
+    h = mathutils.to_int(h, None)
+    m = mathutils.to_int(m, None)
+    s = mathutils.to_float(s, None)
+    if (h is not None) and (m is not None) and (s is not None):
+        if h < 0:
+            sgn = -1
         else:
-            dat.append(res[i])
-        i += 1
-    return dat
-
-def add_days(dat, dd):
-    """
-    Add the day delta to the date.
-
-    :param dat: date tuple to adjust (year, month, day[, hours, mins, secs[, mode]])
-    :param dd:  day delta
-    :return:    adjusted date tuple (year, month, day[, hours, mins, secs[, mode]])
-    """
-    if validate_date(dat, require_time=False):
-        ldat = len(dat)
-        j = to_julian_from_date_tuple(dat)
-        dat = to_date_tuple_from_julian(j + dd)
-        return dat[0:ldat]
-    raise ValueError, "Invalid date!"
-
-def add_months(dat, dm):
-    """
-    Add the month delta to the date.
-
-    :param dat: date tuple to adjust (year, month, day[, hours, mins, secs[, mode]])
-    :param dm:  month delta
-    :return:    adjusted date tuple (year, month, day[, hours, mins, secs[, mode]])
-    """
-    if validate_date(dat, require_time=False):
-        m = dat[1] + dm
-        dy = 0
-        while m < 1:
-            dy -= 1
-            m += 12
-        while m > 12:
-            dy += 1
-            m -= 12
-        dat[1] = m
-        return add_years(dat, dy)
-    raise ValueError, "Invalid date!"
-
-def add_years(dat, dy):
-    """
-    Add the year delta to the date.
-
-    :param dat: date tuple to adjust (year, month, day[, hours, mins, secs[, mode]])
-    :param dy:  year delta
-    :return:    adjusted date tuple (year, month, day[, hours, mins, secs[, mode]])
-    """
-    if validate_date(dat, require_time=False):
-        dat[0] += dy
-    raise ValueError, "Invalid date!"
-
-def get_date_of_easter(year):
-    """
-    Calculate the date of Easter.
-
-    :param year: year for which to calculate the date of Easter
-    :return:    date tuple for Easter (None if not a valid year)(year, month, day)
-    """
-    if (year is not None) and (year >= 1583):
-        a = int(year % 19)
-        b = int(year / 100)
-        c = int(year % 100)
-        d = int(b / 4)
-        e = int(b % 4)
-        f = int((b + 8) / 25)
-        g = int((b - f + 1) / 3)
-        h = int(((19 * a) + b - d - g + 15) % 30)
-        i = int(c / 4)
-        k = int(c % 4)
-        l = int((32 + (2 * e) + (2 * i) - h - k ) % 7)
-        m = int((a + (11 * h) + (22 * l) ) / 451)
-        t = int((h + l - (7 * m) + 114))
-        n = int(t / 31)
-        p = int((t % 31) + 1)
-        return year, n, p
+            sgn = 1
+        return sgn * ((((s / 60.0) + m) / 60.0) + abs(h))
     return None
 
-def get_days_in_month(dat):
-    """
-    Determine the number of days in the specified month.
 
-    :param dat: date tuple (year, month, day[, hours, mins, secs[, mode]])
-    :return:    number of days in the month (0=error)
+def get_date_of_easter(y):
+    """
+    Calculate the date of Easter.
+    :param y: year for which to calculate the date of Easter
+    :return:  date tuple for Easter (None if not a valid year)(year, month, day)
+    """
+    y = mathutils.to_int(y)
+    if y is not None:
+        if y >= 1583:
+            a = int(y % 19)
+            b = int(y / 100)
+            c = int(y % 100)
+            d = int(b / 4)
+            e = int(b % 4)
+            f = int((b + 8) / 25)
+            g = int((b - f + 1) / 3)
+            h = int(((19 * a) + b - d - g + 15) % 30)
+            i = int(c / 4)
+            k = int(c % 4)
+            l = int((32 + (2 * e) + (2 * i) - h - k ) % 7)
+            m = int((a + (11 * h) + (22 * l) ) / 451)
+            t = int((h + l - (7 * m) + 114))
+            n = int(t / 31)
+            p = int((t % 31) + 1)
+            return y, n, p
+    return None
+
+
+def get_days_in_month(m, y=None):
+    """
+    Determine the number of days in the month.
+    :param:     m to analyze (1..12)
+    :param:     y to use with month (None for basic analysis)
+    :return:    number of days in the month
     """
     d = 0
-    if validate_date(dat, require_time=False):
-        d = LENGTH_OF_MONTH[dat[1]]
-        if (dat[1] == 2) and is_leap_year(dat[0]):
-            d += 1
-        return d
-    raise ValueError, "Invalid date!"
+    m = mathutils.to_int(m, None)
+    if m is not None:
+        d = LENGTH_OF_MONTH[m]
+        if (y is not None) and (m == 2):
+            y = mathutils.to_int(y, None)
+            if is_leap_year(y):
+                d += 1
+    return d
 
-def is_leap_year(year):
+
+def get_max_seconds():
+    global SECONDS_MAX
+    if SECONDS_MAX is not None:
+        return SECONDS_MAX
+    mult = math.pow(10, TIME_SECONDS_PRECISION)
+    mx = int(60.0 * mult) - 1
+    SECONDS_MAX = float(mx) / mult
+    return SECONDS_MAX
+
+
+def hms_from_dh(dh):
     """
-    Determine if the specified year is a leap year.
+    Converts decimal hours to a time tuple.
+    :param dh:  decimal hours to convert
+    :return:    time tuple (hours, mins, secs)
+    """
+    dh = mathutils.to_float(dh, None)
+    if dh is not None:
+        h = int(dh)
+        dm = abs(dh - h) * 60.0
+        m = int(dm + 0.0005)    # add a tiny amount to make sure the minutes round properly
+        s = (dm - m) * 60.0
+        return h, m, s
+    return None
 
-    :param year:    the year to test
+
+def is_leap_year(y):
+    """
+    Determine if the year is a leap year.
+    :param y:   year     
     :return:    True or False
     """
-    if year is not None:
-        year = int(year)
-        if (year % 100) == 0:
-            return (year % 400) == 0
-        return (year % 4) == 0
-    raise ValueError, "Invalid year!"
+    y = mathutils.to_int(y, None)
+    if y is not None:
+        if (y % 100) == 0:
+            return (y % 400) == 0
+        return (y % 4) == 0
+    return None
 
-def now():
-    """
-    Get a date tuple of the current date and time.
-
-    :return:    date tuple with the current date and time (year, month, day, hours, minutes, seconds, mode)
-    """
-    current = time.time()
-    dat = time.gmtime(current)
-#   dat = (year, month, day, hour, min, sec, weekday, julian day, daylight savings flag)
-    return dat[0], dat[1], dat[2], dat[3], dat[4], fix(dat[5], TIME_SECONDS_PRECISION), 'ut'
-
-def set_daylight_savings(daylight_savings):
-    """
-    Set the daylight savings to be used in date calculations.
-
-    :param daylight_savings: True=daylight savings
-    """
-    global DAYLIGHT_SAVINGS
-    if daylight_savings is not None:
-        DAYLIGHT_SAVINGS = daylight_savings
-
-def set_latitude(latitude):
-    """
-    Set the latitude to be used in date calculations.
-
-    :param latitude:    the latitude to set (- for west, + for east)
-    """
-    global LATITUDE
-    if latitude is not None:
-        latitude = to_float(latitude)
-        latitude = normalize_degrees(latitude, 90.0)
-        LATITUDE = latitude
-
-def set_longitude(longitude):
-    """
-    Set the longitude to be used in date calculations.
-
-    :param longitude:   the longitude to set (- for west, + for east)
-    """
-    global LONGITUDE
-    if longitude is not None:
-        longitude = to_float(longitude)
-        longitude = normalize_degrees(longitude)
-        LONGITUDE = longitude
-
-def set_zone_correction(zc):
-    """
-    Set the time zone correction to be used in date calculations.
-
-    :param zc:  the time zone correction to set (- for west, + for east)
-    """
-    global ZONE_CORRECTION
-    if zc is not None:
-        zc = to_int(zc)
-        if zc < -24:
-            zc = -24
-        elif zc > 24:
-            zc = 24
-        ZONE_CORRECTION = zc
-
-def to_pretty_date(dat, format=DATETIME_PRINT_FORMAT):
-    """
-    Convert the date tuple to a formatted date.
-
-    :param dat: the date tuple to use
-    :return:    the formatted date string (or None if error)
-    """
-    s = ""
-    if validate_date(dat):
-        t = (int(dat[0]), int(dat[1]), int(dat[2]), int(dat[3]), int(dat[4]), int(dat[5]), 0, 0, 0)
-        s = time.strftime(format, t)
-        if len(dat) > 6:
-            s += ' ' + dat[6].upper()
-    return s
-
-def to_date_tuple_from_julian(jul, mode=TIME_MODE_UT):
-    """
-    Converts a julian day to a date tuple.
-
-    :param jul:     julian
-    :param mode:    time mode (default: 'ut')
-    :return:        date tuple (year, month, day, hours, minutes, seconds, mode)
-    """
-    if jul is not None:
-        jd = 0.5 + jul
-        I = int(jd)
-        F = jd - I
-        if I > 2229160:
-            A = int((I - 1867216.25) / 36524.25)
-            B = I + 1 + A - int(A / 4.0)
-        else:
-            B = I
-        C = B + 1524
-        D = int((C - 122.1) / 365.25)
-        E = int(365.25 * D)
-        G = int((C - E) / 30.6001)
-        d = C - E + F - int(30.6001 * G)
-        if G < 13.5:
-            month = G - 1
-        else:
-            month = G - 13
-        if month > 2.5:
-            year = D - 4716
-        else:
-            year = D - 4715
-        day = int(d)
-        h = (d - day) * 24
-        hour, minute, sec = to_time_tuple_from_hours(h)
-        return year, month, day, hour, minute, sec, mode
-    raise ValueError, "Invalid julian date!"
 
 def to_day_of_week_from_julian(jul):
     """
     Converts a julian to day of the week.
-
     :param jul: julian
     :return:    day of week
     """
-    global DAYS_OF_WEEK
+    jul = mathutils.to_float(jul, None)
     if jul is not None:
         a = (jul + 1.5) / 7.0
-        day = int(round((a - int(a)) * 7.0))
+        day = mathutils.to_int(round((a - mathutils.to_int(a)) * 7.0))
         return day - 1
-    raise ValueError, "Invalid julian date!"
+    return None
 
-def to_gst(dat):
-    """
-    Converts to greenwich sidereal time.
 
-    :param dat: the date time tuple to use
-    :return:    the converted date time tuple (None if error)
+def validate_date(year, month, day, hours=None, minutes=None, seconds=None, mode=None, require_time=True):
     """
-    global LONGITUDE
-    if validate_date(dat):
-        if (dat[6] == TIME_MODE_TD) or (dat[6] == TIME_MODE_LCT):
-            dat = to_ut(dat)
-        if dat[6] == TIME_MODE_UT:
-            j = to_julian_from_date_tuple(dat[0:3])
-            S = j - 2451545.0
+    Validate a date or date time.
+    :return:    (year, month, day[, hours, minutes, seconds[, mode]]) or None
+    """
+    yr = mathutils.to_int(year, None)
+    mth = mathutils.to_int(month, None)
+    dy = mathutils.to_int(day, None)
+    if yr is not None:
+        if (mth is not None) and (mth >= 1) and (mth <= 12):
+            if is_leap_year(yr) and (mth == 2):
+                if dy > 29:
+                    return None
+            elif dy > LENGTH_OF_MONTH[mth]:
+                return None
+            elif dy < 1:
+                return None
+            if hours is not None:
+                tm = validate_time(hours, minutes, seconds, mode)
+                if tm is None:
+                    return None
+                if len(tm) == 4:
+                    return yr, mth, dy, tm[0], tm[1], tm[2], tm[3]
+                return yr, mth, dy, tm[0], tm[1], tm[2]
+            elif require_time:
+                return None
+            return yr, mth, dy
+    return None
+
+
+def validate_time(hours, minutes, seconds, mode=None):
+    """
+    Validate the time.
+    :return:    (hours, minutes, seconds[, mode]) or None
+    """
+    hrs = mathutils.to_int(hours, None)
+    mns = mathutils.to_int(minutes, None)
+    scs = mathutils.to_float(seconds, None)
+    if (hrs is not None) and (mns is not None) and (scs is not None):
+        if (hrs >= 0) and (hrs < 24):
+            if (mns >= 0) and (mns < 60):
+                if (scs >= 0) and (scs < 60):
+                    if mode is not None:
+                        if mode in TIME_MODES:
+                            return hrs, mns, scs, mode
+                    else:
+                        return hrs, mns, scs
+    return None
+
+
+class AstroDate:
+    """
+    Encapsulate the functionality to create and manipulate astronomical dates and times.
+    This class supports dates with one of the following times: Local Civil Time (LCT), Universal Time (UT),
+    mean Greenwich Sidereal Time (GST), Local Sidereal Time (LST), and Dynamical Time (TD).
+    
+    LCT refers to statutory time scales designated by civilian authorities, or to local time indicated by clocks.
+    
+    UT is a time standard based on Earth's rotation. It is a modern continuation of Greenwich Mean Time.
+    
+    GST is a minor adjustment from Greenwich apparent sidereal time (GAST), the hour angle of the vernal equinox
+    at the prime meridian at Greenwich London, using the equation of the equinoxes.
+    
+    LST is a time standard adjussted by an amount that is proportional to the longitude of the locality.
+    """
+
+    def __init__(self):
+        self.year = None
+        self.month = None
+        self.day = None
+        self.hours = None
+        self.minutes = None
+        self.seconds = None
+        self.mode = None
+        self.daylight_saving = True
+        self.zone_correction = 0
+        self.longitude = 0
+
+    @staticmethod
+    def alloc(year, month=1, day=1, hours=0, minutes=0, seconds=0.0, mode=TIME_MODE_UT):
+        """
+        Allocate an AstroDate and set.
+        :param year:    the year
+        :param month:   the month
+        :param day:     the day
+        :param hours:   the hours
+        :param minutes: the minutes
+        :param seconds: the seconds
+        :param mode:    the time mode
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.set(year, month, day, hours, minutes, seconds, mode)
+        return d
+
+    @staticmethod
+    def alloc_with_date(date):
+        d = AstroDate()
+        dat = date.get_tuple()
+        zc = date.get_zone_correction()
+        ds = date.get_daylight_savings()
+        lng = date.get_longitude()
+        d.set_from_tuple(dat)
+        d.set_zone_correction(zc)
+        d.set_daylight_savings(ds)
+        d.set_longitude(lng)
+        return d
+
+    @staticmethod
+    def alloc_with_epochTD(epochTD):
+        d = AstroDate()
+        d.set_from_epochTD(epochTD)
+        return d
+
+    @staticmethod
+    def alloc_with_julian(jd, mode=TIME_MODE_UT):
+        """
+        Allocate an AstroDate and set.
+        :param jd:      the julian date
+        :param mode:    the time mode
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.set_from_julian(jd, mode)
+        return d
+
+    @staticmethod
+    def alloc_with_now():
+        """
+        Allocate an AstroDate and set to now.
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.now()
+        return d
+
+    @staticmethod
+    def alloc_with_tuple(dat):
+        """
+        Allocate an AstroDate and set.
+        :param dat: the date tuple to set with
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.set_from_tuple(dat)
+        return d
+
+    def add_days(self, dd):
+        """
+        Add a day delta to the date.
+        :param dd:  day delta
+        """
+        if self.day is not None:
+            self.day += mathutils.to_int(dd, 0)
+            dm = 0
+            while self.day < 1:
+                self.day += get_days_in_month(self.month, self.year)
+                dm -= 1
+            while self.day > get_days_in_month(self.month, self.year):
+                self.day -= get_days_in_month(self.month, self.year)
+                dm += 1
+            self.add_months(dm)
+
+    def add_hours(self, dh):
+        """
+        Add an hour delta to the date.
+        :param dh:  hour delta
+        """
+        if self.hours is not None:
+            self.hours += mathutils.to_int(dh, 0)
+            dd = 0
+            while self.hours < 1:
+                self.hours += 24
+                dd -= 1
+            while self.hours >= 24:
+                self.hours -= 24
+                dd += 1
+            self.add_days(dd)
+
+    def add_minutes(self, dm):
+        """
+        Add a minute delta to the date.
+        :param dm:  minute delta
+        """
+        if self.minutes is not None:
+            self.minutes += mathutils.to_int(dm, 0)
+            dh = 0
+            while self.minutes < 1:
+                self.minutes += 24
+                dh -= 1
+            while self.minutes >= 24:
+                self.minutes -= 24
+                dh += 1
+            self.add_hours(dh)
+
+    def add_seconds(self, ds):
+        """
+        Add a seconds delta to the date.
+        :param ds:  seconds delta
+        """
+        if self.seconds is not None:
+            self.seconds += mathutils.to_float(ds, 0.0)
+            dm = 0
+            while self.seconds < 1:
+                self.seconds += 60.0
+                dm -= 1
+            while self.seconds >= 60.0:
+                self.seconds -= 60.0
+                dm += 1
+            self.add_minutes(dm)
+
+    def add_months(self, dm):
+        """
+        Add a month delta to the date.
+        :param dm:  month delta
+        """
+        if self.month is not None:
+            self.month += mathutils.to_int(dm, 0)
+            dy = 0
+            while self.month < 1:
+                self.month += 12
+                dy -= 1
+            while self.month > 12:
+                self.month -= 12
+                dy += 1
+            self.add_years(dy)
+
+    def add_years(self, dy):
+        """
+        Add a year delta to the date.
+        :param dy:  year delta
+        """
+        if self.year is not None:
+            self.year += mathutils.to_int(dy, 0)
+
+    def get_date_of_easter(self):
+        """
+        Get the date of easter for the current year.
+        :return:    the date of easter as a tuple (year, month, day)
+        """
+        return get_date_of_easter(self.year)
+
+    def get_day(self):
+        return self.day
+
+    def get_daylight_savings(self):
+        return self.daylight_saving
+
+    def get_days_in_month(self):
+        """
+        Get the number of days in the current month.
+        :return:    the number of days
+        """
+        return get_days_in_month(self.month, self.year)
+
+    def get_decimal_hours(self):
+        """
+        Get the current time as a decimal value. 
+        :return:    the current time
+        """
+        return dh_from_hms(self.hours, self.minutes, self.seconds)
+
+    def get_julian(self, useZeroHours = False):
+        """
+        Calculate the julian day.
+        :return:    julian
+        """
+        if useZeroHours:
+            return calculate_julian(self.year, self.month, self.day)
+        return calculate_julian(self.year, self.month, self.day, self.hours, self.minutes, self.seconds)
+
+    def get_longitude(self):
+        return self.longitude
+
+    def get_month(self):
+        return self.month
+
+    def get_pretty_string(self, format=DATETIME_PRINT_FORMAT):
+        """
+        Convert the date to a formatted date string.
+        :return:    the formatted date string
+        """
+        t = (self.year, self.month, self.day, self.hours, self.minutes, int(self.seconds), 0, 0, 0)
+        s = time.strftime(format, t)
+        if self.mode is not None:
+            s += ' ' + self.mode.upper()
+        return s
+
+    def get_tuple(self):
+        """
+        Get the current date/time as a tuple.
+        :return:    the date/time (year, month, day[, hours, minutes, seconds[, mode]])
+        """
+        if self.year is not None:
+            if self.hours is not None:
+                secs = mathutils.fix(self.seconds, TIME_SECONDS_PRECISION)
+                if self.mode is not None:
+                    return self.year, self.month, self.day, self.hours, self.minutes, secs, self.mode
+                return self.year, self.month, self.day, self.hours, self.minutes, secs
+            return self.year, self.month, self.day
+        return None
+
+    def get_year(self):
+        return self.year
+
+    def get_zone_correction(self):
+        return self.zone_correction
+
+    def is_date_set(self):
+        """
+        Test if the date has been set.
+        :return: true=is set
+        """
+        return (self.year is not None) and (self.month is not None) and (self.day is not None)
+
+    def is_gst(self):
+        """
+        Test if the time mode is GST.
+        :return: true=is GST
+        """
+        return self.mode == TIME_MODE_GST
+
+    def is_lct(self):
+        """
+        Test if the time mode is LCT.
+        :return: true=is LCT
+        """
+        return self.mode == TIME_MODE_LCT
+
+    def is_leap_year(self):
+        """
+        Test if the year is a leap year.
+        :return: true=is leap year
+        """
+        return is_leap_year(self.year)
+
+    def is_lst(self):
+        """
+        Test if the time mode is LST.
+        :return: true=is LST
+        """
+        return self.mode == TIME_MODE_LST
+
+    def is_mode_set(self):
+        """
+        Test if the time mode is set.
+        :return: true=is set
+        """
+        return self.mode is not None
+
+    def is_td(self):
+        """
+        Test if the time mode is TD.
+        :return: true=is TD
+        """
+        return self.mode == TIME_MODE_TD
+
+    def is_time_set(self):
+        """
+        Test if the time has been set.
+        :return: true=is set
+        """
+        return (self.hours is not None) and (self.minutes is not None) and (self.seconds is not None)
+
+    def is_ut(self):
+        """
+        Test if the time mode is UT.
+        :return: true=is UT
+        """
+        return self.mode == TIME_MODE_UT
+
+    def now(self, mode=TIME_MODE_LCT):
+        """
+        Get the current date and time.
+        """
+        current = time.time()
+        dat = time.gmtime(current)
+    #   dat = (year, month, day, hour, min, sec, weekday, julian day, daylight savings flag)
+        self.set_year(dat[0])
+        self.set_month(dat[1])
+        self.set_day(dat[2])
+        self.set_hours(dat[3])
+        self.set_minutes(dat[4])
+        self.set_seconds(dat[5])
+        self.set_mode(mode)
+
+    def set(self, year, month=1, day=1, hours=0, minutes=0, seconds=0.0, mode=TIME_MODE_UT):
+        """
+        Set the date and time.
+        :param year:    the year
+        :param month:   the month
+        :param day:     the day
+        :param hours:   the hours
+        :param minutes: the minutes
+        :param seconds: the seconds
+        :param mode:    the mode
+        """
+        self.year = None
+        self.month = None
+        self.day = None
+        self.hours = None
+        self.minutes = None
+        self.seconds = None
+        self.mode = None
+        if (year is not None) and (month is not None) and (day is not None):
+            self.set_year(year)
+            self.set_month(month)
+            self.set_day(day)
+            if (hours is not None) and (minutes is not None) and (seconds is not None):
+                self.set_hours(hours)
+                self.set_minutes(minutes)
+                self.set_seconds(seconds)
+                if mode is not None:
+                    self.set_mode(mode)
+
+    def set_day(self, day=1):
+        """
+        Set the day.
+        :param day:     the day to set (1..31)
+        """
+        d = 1
+        if day is not None:
+            d = mathutils.to_int(day, 1)
+            if d < 1:
+                d = 1
+            if d > self.get_days_in_month():
+                d = self.get_days_in_month()
+        self.day = d
+
+    def set_daylight_savings(self, daylight_savings):
+        """
+        Set the daylight savings to be used in date calculations.
+        :param daylight_savings: True=daylight savings
+        """
+        if daylight_savings is not None:
+            self.daylight_saving = daylight_savings
+
+    def set_from_epochTD(self, epochTD):
+        self.set_year(mathutils.to_int(epochTD))
+        self.set_month(1)
+        self.set_day(1)
+        self.set_hours(0)
+        self.set_minutes(0)
+        self.set_seconds(0.0)
+        self.set_mode(TIME_MODE_TD)
+
+    def set_from_hours(self, dh=0.0, mode=TIME_MODE_UT):
+        """
+        Set the time from decimal hours. 
+        :param dh:      the time as decimal hours
+        :param mode:    the time mode
+        """
+        h, m, s = hms_from_dh(dh)
+        self.set_hours(m)
+        self.set_minutes(m)
+        self.set_seconds(s)
+        self.set_mode(mode)
+
+    def set_from_julian(self, jul, mode=TIME_MODE_UT):
+        """
+        Set date from a julian day.
+        :param jul:     julian
+        :param mode:    time mode (default: 'ut')
+        """
+        jul = mathutils.to_float(jul, None)
+        if jul is not None:
+            jd = 0.5 + jul
+            I = mathutils.to_int(jd)
+            F = jd - I
+            if I > 2229160:
+                A = mathutils.to_int((I - 1867216.25) / 36524.25)
+                B = I + 1 + A - mathutils.to_int(A / 4.0)
+            else:
+                B = I
+            C = B + 1524
+            D = mathutils.to_int((C - 122.1) / 365.25)
+            E = mathutils.to_int(365.25 * D)
+            G = mathutils.to_int((C - E) / 30.6001)
+            d = C - E + F - mathutils.to_int(30.6001 * G)
+            if G < 13.5:
+                mth = G - 1
+            else:
+                mth = G - 13
+            if mth > 2.5:
+                yr = D - 4716
+            else:
+                yr = D - 4715
+            day = mathutils.to_int(d)
+            h = (d - day) * 24
+            hrs, mns, scs = hms_from_dh(h)
+            self.set_year(yr)
+            self.set_month(mth)
+            self.set_day(day)
+            self.set_hours(hrs)
+            self.set_minutes(mns)
+            self.set_seconds(scs)
+            self.set_mode(mode)
+
+    def set_from_tuple(self, dat):
+        """
+        Set from a tuple of values.
+        (year, month, day[, hours, minutes, seconds[, mode]]
+        :param dat:     the tuple of values to set with
+        """
+        self.year = None
+        self.month = None
+        self.day = None
+        self.hours = None
+        self.minutes = None
+        self.seconds = None
+        self.mode = None
+        if dat is not None:
+            if len(dat) == 7:
+                self.set(dat[0], dat[1], dat[2], dat[3], dat[4], dat[5], dat[6])
+            elif len(dat) == 6:
+                self.set(dat[0], dat[1], dat[2], dat[3], dat[4], dat[5])
+            elif len(dat) == 3:
+                self.set(dat[0], dat[1], dat[2])
+
+    def set_hours(self, h=0):
+        """
+        Set the hours.
+        :param h:   the hours to set (0..23)
+        """
+        h = mathutils.to_int(h, 0)
+        if h is not None:
+            if h < 0:
+                h = 0
+            if h > 23:
+                h = 23
+        self.hours = h
+
+    def set_longitude(self, longitude=0.0):
+        """
+        Set the longitude to be used in date calculations.
+        :param longitude:   the longitude to set (- for west, + for east)(-180..180)
+        """
+        l = mathutils.to_float(longitude, 0.0)
+        if l is not None:
+            l = mathutils.normalize_degrees(l, -180.0, 180.0)
+        self.longitude = l
+
+    def set_minutes(self, minutes=0):
+        """
+        Set the minutes.
+        :param minutes:   the minutes to set (0..59)
+        """
+        m = mathutils.to_int(minutes, 0)
+        if m is not None:
+            if m < 0:
+                m = 0
+            if m > 59:
+                m = 59
+        self.minutes = m
+
+    def set_mode(self, mode=TIME_MODE_UT):
+        """
+        Set the time mode.
+        :param mode: the time mode ("lct", "ut", "gst", "lst", "td") 
+        """
+        m = TIME_MODE_UT
+        if mode is not None:
+            mode = mode.lower()
+            if mode in TIME_MODES:
+                m = mode
+        self.mode = m
+
+    def set_month(self, month=1):
+        """
+        Set the month.
+        :param month:   the month to set (1..12)
+        """
+        m = mathutils.to_int(month, 1)
+        if m is not None:
+            if m < 1:
+                m = 1
+            if m > 12:
+                m = 12
+        self.month = m
+        if self.day is not None:
+            if self.day > self.get_days_in_month():
+                self.day = self.get_days_in_month()
+
+    def set_seconds(self, seconds=0.0):
+        """
+        Set the seconds.
+        :param seconds:     the seconds to set (0..59.99)
+        """
+        s = mathutils.to_float(seconds, 0.0)
+        if s is not None:
+            if s < 0.0:
+                s = 0.0
+            if s > get_max_seconds():
+                s = get_max_seconds()
+        self.seconds = s
+
+    def set_year(self, year):
+        """
+        Set the year.
+        :param year:    the year to set
+        """
+        y = mathutils.to_int(year, None)
+        if y is not None:
+            self.year = y
+        if self.day is not None:
+            if self.day > self.get_days_in_month():
+                self.day = self.get_days_in_month()
+
+    def set_zone_correction(self, zc):
+        """
+        Set the time zone correction to be used in date calculations.
+        :param zc:  the time zone correction to set (- for west, + for east)(-24..24)
+        """
+        zc = mathutils.to_int(zc, 0)
+        if zc is not None:
+            zc = mathutils.normalize_hours(zc, -24.0, 24.0)
+        self.zone_correction = zc
+
+    def to_gst(self):
+        """
+        Converts to greenwich mean sidereal time.
+        Note: this method depends on longitude being set to convert from LST.
+        Note: this method depends on zone_correction and daylight_savings being set to convert from LCT.
+        """
+        if (self.mode == TIME_MODE_TD) or (self.mode == TIME_MODE_LCT):
+            self.to_ut()
+        if self.mode == TIME_MODE_UT:
+            jd = self.get_julian(useZeroHours=True)
+            S = jd - 2451545.0
             T = S / 36525.0
             T0 = 6.69737455833 + (T * (2400.0513369 + (T * 0.00002586222 + (T * 0.00000000172))))
             while T0 >= 24.0:
                 T0 -= 24.0
             while T0 < 0.0:
                 T0 += 24.0
-            t = to_hours_from_time_tuple(dat[3:6])
-            t *= 1.002737909
-            t += T0
-            if t >= 24.0:
+            H = dh_from_hms(self.hours, self.minutes, self.seconds)
+            t = T0
+            t += 1.002737909 * H
+            while t >= 24.0:
                 t -= 24.0
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_GST
-        if dat[6] == TIME_MODE_LST:
-            t = to_hours_from_time_tuple(dat[3:6])
-            t -= LONGITUDE / 15.0
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_GST
+        if self.mode == TIME_MODE_LST:
+            t = dh_from_hms(self.hours, self.minutes, self.seconds)
+            t -= self.longitude / 15.0
             if t >= 24.0:
                 t -= 24.0
             elif t < 0.0:
                 t += 24.0
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_GST
-        return dat
-    raise ValueError, "Invalid date!"
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_GST
 
-def to_hours_from_time_tuple(tim):
-    """
-    Converts a time tuple to decimal hours.
-
-    :param tim: time tuple (hours, mins, secs)
-    :return:    dhours
-    """
-    if validate_time(tim):
-        hour, min, sec = tim
-        if hour < 0:
-            mult = -1
-        else:
-            mult = 1
-        return mult * (abs(hour) + ((fix(sec, TIME_SECONDS_PRECISION) / 60.0) + min) / 60.0)
-    raise ValueError, "Invalid time!"
-
-def to_julian_from_date_tuple(dat):
-    """
-    Converts a date tuple to julian day.
-
-    :param dat: date tuple (year, month, day[, hours, mins, secs[, mode]])
-    :return:    julian
-    """
-    if validate_date(dat, require_time=False):
-        if len(dat) == 7:
-            year, month, day, hour, min, sec, mode = dat
-        elif len(dat) == 6:
-            year, month, day, hour, min, sec = dat
-        elif len(dat) == 3:
-            year, month, day = dat
-            hour, min, sec = 0, 0, 0
-    else:
-        raise ValueError, "Invalid date!"
-    if month <= 2:
-        year -= 1
-        month += 12
-    if year >= 1582:
-        A = year / 100
-        B = 2 - A + (A / 4)
-    else:
-        B = 0
-    if year < 0:
-        C = int((365.25 * year) - 0.75)
-    else:
-        C = int(365.25 * year)
-    D = int(30.6001 * (month + 1))
-    return 1720994.5 + B + C + D + day + ((((fix(sec, TIME_SECONDS_PRECISION) / 60.0) + float(min)) / 60.0) + float(hour)) / 24.0
-
-def to_lct(dat):
-    """
-    Converts to local civil time.
-
-    :param dat: the date time tuple to use
-    :return:    the converted date time tuple
-    """
-    global DAYLIGHT_SAVINGS, ZONE_CORRECTION
-    if validate_date(dat):
-        if (dat[6] == TIME_MODE_TD) or (dat[6] == TIME_MODE_LST) or (dat[6] == TIME_MODE_GST):
-            dat = to_ut(dat)
-        if dat[6] == TIME_MODE_UT:
-            t = to_hours_from_time_tuple(dat[3:6])
-            t += ZONE_CORRECTION
-            if DAYLIGHT_SAVINGS:
+    def to_lct(self):
+        """
+        Convert to local civil time.
+        Note: this method depends on longitude being set to convert from LST.
+        Note: this method depends on zone_correction and daylight_savings being set to convert to LCT.
+        """
+        if (self.mode == TIME_MODE_TD) or (self.mode == TIME_MODE_LST) or (self.mode == TIME_MODE_GST):
+            self.to_ut()
+        if self.mode == TIME_MODE_UT:
+            t = dh_from_hms(self.hours, self.minutes, self.seconds)
+            t += self.zone_correction
+            if self.daylight_saving:
                 t += 1
             if t >= 24.0:
                 t -= 24.0
-                dat = add_days(dat, 1)
+                self.add_days(1)
             elif t < 0.0:
                 t += 24.0
-                dat = add_days(dat, -1)
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_LCT
-        return dat
-    raise ValueError, "Invalid date!"
+                self.add_days(-1)
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_LCT
 
-def to_lst(dat):
-    """
-    Converts to local sidereal time.
-
-    :param dat: the date time tuple to use
-    :return:    the converted date time tuple
-    """
-    global LONGITUDE
-    if validate_date(dat):
-        if dat[6] == TIME_MODE_TD:
-            dat = to_ut(dat)
-        if (dat[6] == TIME_MODE_LCT) or (dat[6] == TIME_MODE_UT):
-            dat = to_gst(dat)
-        if dat[6] == TIME_MODE_GST:
-            t = to_hours_from_time_tuple(dat[3:6])
-            t += LONGITUDE / 15.0
+    def to_lst(self):
+        """
+        Convert to local mean sidereal time.
+        Note: this method depends on longitude being set to convert to LST.
+        Note: this method depends on zone_correction and daylight_savings being set to convert from LCT.
+        """
+        if self.mode == TIME_MODE_TD:
+            self.to_ut()
+        if (self.mode == TIME_MODE_LCT) or (self.mode == TIME_MODE_UT):
+            self.to_gst()
+        if self.mode == TIME_MODE_GST:
+            t = dh_from_hms(self.hours, self.minutes, self.seconds)
+            t += self.longitude / 15.0
             if t >= 24.0:
                 t -= 24.0
             elif t < 0.0:
                 t += 24.0
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_LST
-        return dat
-    raise ValueError, "Invalid date!"
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_LST
 
-def to_td(dat):
-    """
-    Converts to dynamical time.
+    def to_td(self):
+        """
+        Convert to dynamical time.
+        Note: this method depends on longitude being set to convert from LST.
+        Note: this method depends on zone_correction and daylight_savings being set to convert from LCT.
+        """
+        if self.mode != TIME_MODE_TD:
+            self.to_ut()
+            dt = deltat.calc_dt_interp(self.get_tuple()) / 86400.0
+            jde = self.get_julian() + dt
+            self.set_from_julian(jde, TIME_MODE_TD)
 
-    :param dat: the date time tuple to use
-    :return:    the converted date time tuple
-    """
-    if validate_date(dat):
-        if dat[6] != TIME_MODE_TD:
-            dat = to_ut(dat)
-            dt = deltat.calc_dt_interp(dat) / 86400.0
-            td_j = to_julian_from_date_tuple(dat) + dt
-            dat = to_date_tuple_from_julian(td_j, TIME_MODE_TD)
-        return dat
-    raise ValueError, "Invalid date!"
-
-def to_time_tuple_from_hours(dhours):
-    """
-    Converts decimal hours to a time tuple.
-
-    :param dhours:  decimal hours to convert
-    :return:        time tuple (hours, mins, secs)
-    """
-    if dhours is not None:
-        hour = int(dhours)
-        dmins = abs(dhours - hour) * 60
-        min = int(dmins + 0.0005)    # add a tiny amount to make sure the minutes round properly
-        sec = (dmins - min) * 60
-        return hour, min, fix(sec, TIME_SECONDS_PRECISION)
-    raise ValueError, "Invalid decimal hours!"
-
-def to_ut(dat):
-    """
-    Converts to universal time.
-
-    :param dat: the date time tuple to use
-    :return:    the converted date time tuple
-    """
-    global DAYLIGHT_SAVINGS, ZONE_CORRECTION
-    if validate_date(dat):
-        if dat[6] == TIME_MODE_LCT:
-            t = to_hours_from_time_tuple(dat[3:6])
-            if DAYLIGHT_SAVINGS:
+    def to_ut(self):
+        """
+        Convert to universal time.
+        Note: this method depends on longitude being set to convert from LST.
+        Note: this method depends on zone_correction and daylight_savings being set to convert from LCT.
+        """
+        if self.mode == TIME_MODE_LCT:
+            t = dh_from_hms(self.hours, self.minutes, self.seconds)
+            if self.daylight_saving:
                 t -= 1
-            t -= ZONE_CORRECTION
+            t -= self.zone_correction
             if t >= 24.0:
                 t -= 24.0
-                dat = add_days(dat, 1)
+                self.add_days(1)
             elif t < 0.0:
                 t += 24.0
-                dat = add_days(dat, -1)
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_UT
-        if dat[6] == TIME_MODE_LST:
-            dat = to_gst(dat)
-        if dat[6] == TIME_MODE_GST:
-            j = to_julian_from_date_tuple(dat)
-            j -= (j - int(j)) - 0.5
-            S = float(j) - 2451545.0
-            T = float(S) / 36525.0
-            T0 = 6.697374558 + (T * (2400.051336 + (0.000025862 * T)))
+                self.add_days(-1)
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_UT
+        if self.mode == TIME_MODE_LST:
+            self.to_gst()
+        if self.mode == TIME_MODE_GST:
+            jd = self.get_julian(useZeroHours=True)
+            S = jd - 2451545.0
+            T = S / 36525.0
+            T0 = 6.69737455833 + (T * (2400.0513369 + (T * 0.00002586222 + (T * 0.00000000172))))
             while T0 >= 24.0:
                 T0 -= 24.0
             while T0 < 0.0:
                 T0 += 24.0
-            t = to_hours_from_time_tuple(dat[3:6])
-            t -= T0
+            H = dh_from_hms(self.hours, self.minutes, self.seconds)
+            t = H - T0
             while t < 0.0:
                 t += 24.0
-            t *= 0.9972695663
-            tim = to_time_tuple_from_hours(t)
-            dat = dat[0], dat[1], dat[2], tim[0], tim[1], tim[2], TIME_MODE_UT
-        if dat[6] == TIME_MODE_TD:
-            t = deltat.calc_dt_interp(dat) / 86400.0
-            j = to_julian_from_date_tuple(dat)
-            dat = to_date_tuple_from_julian(j - t, TIME_MODE_UT)
-        return dat
-    raise ValueError, "Invalid date!"
+            t /= 1.002737909
+            self.hours, self.minutes, self.seconds = hms_from_dh(t)
+            self.mode = TIME_MODE_UT
+        if self.mode == TIME_MODE_TD:
+            t = deltat.calc_dt_interp(self.get_tuple()) / 86400.0
+            j = self.get_julian()
+            self.set_from_julian(j - t, TIME_MODE_UT)
 
-def validate_date(dat, require_time=True):
-    """
-    Validate a date or date time tuple.
 
-    :param dat:         the date tuple to validate
-    :return:            True=valid, False=invalid
-    """
-    global LENGTH_OF_MONTH
-    if (dat is not None) and (len(dat) >= 3):
-        yr = to_int(dat[0])
-        mth = to_int(dat[1])
-        day = to_int(dat[2])
-        if not validate_month(mth):
-            return False
-        if is_leap_year(yr) and (mth == 2):
-            if day > 29:
-                return False
-        elif day > LENGTH_OF_MONTH[mth]:
-            return False
-        if len(dat) > 3:
-            if not validate_time(dat[3:]):
-                return False
-        elif require_time:
-            return False
-        return True
-    return False
+if __name__ == "__main__":
 
-def validate_month(month):
-    """
-    Validate a month.
 
-    :param month:   the month to validate
-    :return:        True=valid, False=invalid
-    """
-    if month is not None:
-        month = to_int(month)
-        if month < 1:
-            return False
-        if month <= 12:
-            return True
-    return False
-
-def validate_time(tim):
-    """
-    Validate a time tuple.
-
-    :param tim: the time tuple to validate
-    :return:    True=valid, False=invalid
-    """
-    global TIME_MODES
-    if (tim is not None) and (len(tim) >= 3):
-        hrs = to_int(tim[0])
-        mns = to_int(tim[1])
-        scs = to_float(tim[2])
-        if (hrs >= 0) and (hrs < 24):
-            if (mns >= 0) and (mns < 60):
-                if (scs >= 0) and (scs < 60):
-                    if len(tim) == 4:
-                        md = tim[3]
-                        if md in TIME_MODES:
-                            return True
-                    else:
-                        return True
-    return False
+    dat_td = (1950, 1, 1, 12, 0, 0, "td")
+    dat = AstroDate()
+    dat.set_from_tuple(dat_td)
+    jd = dat.get_julian()
+    print(jde)
