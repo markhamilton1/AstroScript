@@ -143,7 +143,7 @@ def hms_from_dh(dh):
         h = int(dh)
         dm = abs(dh - h) * 60.0
         m = int(dm + 0.0005)    # add a tiny amount to make sure the minutes round properly
-        s = (dm - m) * 60.0
+        s = mathutils.fix((dm - m) * 60.0, 2)
         return h, m, s
     return None
 

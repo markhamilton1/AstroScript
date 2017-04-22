@@ -41,7 +41,7 @@ def dms_from_dd(dd):
         d = int(dd)
         dm = abs(dd - d) * 60.0
         m = int(dm + 0.0005)
-        s = (dm - m) * 60.0
+        s = mathutils.fix((dm - m) * 60.0, 2)
         return d, m, s
     return None
 
@@ -191,14 +191,15 @@ class AstroCoord:
             c2_2 = coord2.get_dd2()
             c2_2_rad = c2_2 * math.pi / 180.0
             cos_d = (math.sin(c1_2_rad) * math.sin(c2_2_rad)) + (math.cos(c1_2_rad) * math.cos(c2_2_rad) * math.cos(diff_c1_1_c2_1_rad))
-            d = math.acos(cos_d) * 180.0 / math.pi
-            if (d <= 0.16666667) or (d >= 179.83333333):
+            dd = math.acos(cos_d) * 180.0 / math.pi
+            if (dd <= 0.16666667) or (dd >= 179.83333333):
                 t1 = math.cos((c1_2 + c2_2) / 2.0)
                 t2 = c1_1 - c2_1
                 t3 = c1_2 - c2_2
                 t = (t1 * t1) * (t2 * t2) + (t3 * t3)
-                d = math.sqrt(t)
-            return dms_from_dd(d)
+                dd = math.sqrt(t)
+            d, m, s = dms_from_dd(dd)
+            return d, m, mathutils.fix(s, 2)
         raise ValueError, "Invalid coordinate! (Must be Equatorial or Ecliptic)"
 
     def calculate_mean_obliquity(self, epochTD=None):
