@@ -4,15 +4,11 @@ The ```astrodate``` package is the base functionality of the ```astrocore``` mod
 
 The ```astrodate``` package currently supports 5 time standards: **Local Civil Time**, **Coordinated Universal Time**, **Greenwich Sidereal Time**, **Local Sidereal Time**, and **Terrestrial Dynamic Time**.
 
-**Local Civil Time (LCT)** - Refers to statutory time scales designated by civilian authorities, or to local time indicated by clocks. This time scale is generally the standard time in a time zone at a fixed offset from Coordinated Universal Time.
-
-**Coordinated Universal Time (UTC)** - Is the primary time standard by which the world regulates clocks and time. It is within 1 second of mean solar time at 0 degrees longitude; it does NOT observe daylight saving time. This time standard is based on the rotation of the earth with respect to the mean position of the sun.
-
-**Greenwich Sidereal Time (GST)** - Sidereal time is the measure of the earth's rotation with respect to celestial markers. By convention GST is the measure at the Greenwich Meridian of when the earth's equator intersects with the ecliptic (earth's orbit), called the vernal equinox. This is really just a measure of the average position of the vernal equinox because it neglects the short term effects of nutation.
-
-**Local Sidereal Time (LST)** - This is the sidereal time adjusted by the observers longitude. This is the time commonly display on an observatory's sidereal clock.
-
-**Terrestrial Dynamic Time (TDT)** - This is a uniform time standard that was established for computation of planetary motion.
+* **Local Civil Time (LCT)** - Refers to statutory time scales designated by civilian authorities, or to local time indicated by clocks. This time scale is generally the standard time in a time zone at a fixed offset from Coordinated Universal Time.
+* **Coordinated Universal Time (UTC)** - Is the primary time standard by which the world regulates clocks and time. It is within 1 second of mean solar time at 0 degrees longitude; it does NOT observe daylight saving time. This time standard is based on the rotation of the earth with respect to the mean position of the sun.
+* **Greenwich Sidereal Time (GST)** - Sidereal time is the measure of the earth's rotation with respect to celestial markers. By convention GST is the measure at the Greenwich Meridian of when the earth's equator intersects with the ecliptic (earth's orbit), called the vernal equinox. This is really just a measure of the average position of the vernal equinox because it neglects the short term effects of nutation.
+* **Local Sidereal Time (LST)** - This is the sidereal time adjusted by the observers longitude. This is the time commonly display on an observatory's sidereal clock.
+* **Terrestrial Dynamic Time (TDT)** - This is a uniform time standard that was established for computation of planetary motion.
 
 This package includes a number of convenience functions, as well as the AstroDate class itself. For most calculations the AstroDate class will be used, allowing more than one date/time to be used and manipulated at once.
 
@@ -105,10 +101,38 @@ The zone_correction property is an integer value that adjusts the time for a par
 
 The longitude property is a float value that is used to adjust to Local Sidereal Time from Greenwich Sidereal Time.
 
-Once the properties have been set, performing conversions is very simple. The converssion methods are:
+Once the properties have been set, performing conversions is very simple. The available conversion methods are:
 
 * ```to_gst()```
 * ```to_lct()```
 * ```to_lst()```
 * ```to_tdt()```
 * ```to_utc()```
+
+```a.to_utc()```
+
+Converts the current time standard to Coordinated Universal Time.
+
+This covers all of the core functionality fo the ```AstroDate``` class. The following is a more complete example of using this functionality.
+
+---
+
+## Example 1:
+
+```python
+import astrodate as ad
+
+d = ad.AstroDate().alloc_with_now()
+d.set_daylight_savings(False)
+d.set_zone_correction(-7)
+d.set_longitude(-111.6585)
+print d.get_pretty_string()
+d.to_utc()
+print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())
+d.to_gst()
+print d.get_pretty_string()
+d.to_lst()
+print d.get_pretty_string()
+d.to_tdt()
+print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())
+```

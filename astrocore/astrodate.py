@@ -309,7 +309,7 @@ class AstroDate:
         :return: the AstroDate object
         """
         d = AstroDate()
-        d.set_with_now(mode)
+        d.now(mode)
         return d
 
     @staticmethod
