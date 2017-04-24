@@ -152,13 +152,13 @@ class AstroCoord:
     @staticmethod
     def alloc_with_degrees(dd1, dd2, mode):
         c = AstroCoord()
-        c.set_from_degrees(dd1, dd2, mode)
+        c.set_with_degrees(dd1, dd2, mode)
         return c
 
     @staticmethod
     def alloc_with_tuple(coord):
         c = AstroCoord()
-        c.set_from_tuple(coord)
+        c.set_with_tuple(coord)
         return c
 
     def add_coord1(self, d):
@@ -208,7 +208,7 @@ class AstroCoord:
         else:
             if self.date is None:
                 raise ValueError, "Date (TD) is required!"
-            self.date.to_td()
+            self.date.to_tdt()
             d = self.date
         n = earth.Nutation()
         n.calculate_with_julianTD(d.get_julian())
@@ -303,12 +303,12 @@ class AstroCoord:
             d = mathutils.to_int(deg2, 0)
         self.deg2 = d
 
-    def set_from_degrees(self, dd1, dd2, mode):
+    def set_with_degrees(self, dd1, dd2, mode):
         d1, m1, s1 = dms_from_dd(dd1)
         d2, m2, s2 = dms_from_dd(dd2)
         self.set(d1, m1, s1, d2, m2, s2, mode)
 
-    def set_from_tuple(self, coord):
+    def set_with_tuple(self, coord):
         self.set(coord[0], coord[1], coord[2], coord[3], coord[4], coord[5], coord[6])
 
     def set_latitude(self, latitude):
@@ -592,13 +592,13 @@ if __name__ == "__main__":
     coord = AstroCoord()
 
     Rigel_Coord_Hrs = (5.0, 14.0, 32.3, -8.0, 12.0, 5.9, make_mode(COORD_MODE_EQUATORIAL, COORD1_UNIT_HOURS, COORD1_TYPE_RA))
-    coord.set_from_tuple(Rigel_Coord_Hrs)
+    coord.set_with_tuple(Rigel_Coord_Hrs)
     print(coord.get_pretty_string())
     print(coord.get_pretty_string("d"))
     print
 
     M87_Coord_Hrs = (12, 30, 49, 12, 23,7, make_mode(COORD_MODE_EQUATORIAL, COORD1_UNIT_HOURS, COORD1_TYPE_RA))
-    coord.set_from_tuple(M87_Coord_Hrs)
+    coord.set_with_tuple(M87_Coord_Hrs)
     print(coord.get_pretty_string())
     print(coord.get_pretty_string("d"))
     print
