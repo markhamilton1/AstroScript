@@ -119,6 +119,8 @@ This covers all of the core functionality fo the ```AstroDate``` class. The foll
 
 ## Example 1:
 
+The following example gets the current LCT for Provo, Utah and prints it and each of the other time standards.
+
 ```python
 import astrodate as ad
 
