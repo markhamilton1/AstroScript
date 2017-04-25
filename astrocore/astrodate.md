@@ -30,6 +30,8 @@ The ```astrodate``` package is imported the same as any standard Python package.
 
 ```import astrodate as ad```
 
+In the above case I import it and rename it as ad for convenience.
+
 ---
 
 ## AstroDate - the Class
