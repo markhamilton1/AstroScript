@@ -10,14 +10,26 @@ class Test_Date(unittest.TestCase):
 
         self.lng0 = 64
         self.zc0 = 4
+        self.zc0_1 = 7
+        self.zc0_2 = 7
         self.dst0 = True
+        self.dst0_1 = False
+        self.dst0_2 = True
         self.lct0 = (2012, 7, 23, 3, 37, 0.0, 'lct')
+        self.lct0_1 = (2012, 7, 23, 5, 37, 0.0, 'lct')
+        self.lct0_2 = (2012, 7, 23, 6, 37, 0.0, 'lct')
         self.utc0 = (2012, 7, 22, 22, 37, 0.0, 'utc')
 
         self.lng1 = -75
         self.zc1 = -5
+        self.zc1_1 = 5
+        self.zc1_2 = 0
         self.dst1 = False
+        self.dst1_1 = False
+        self.dst1_2 = True
         self.lct1 = (1980, 4, 22, 10, 36, 51.67, 'lct')
+        self.lct1_1 = (1980, 4, 22, 20, 36, 51.67, 'lct')
+        self.lct1_2 = (1980, 4, 22, 16, 36, 51.67, 'lct')
         self.utc1 = (1980, 4, 22, 15, 36, 51.67, 'utc')
         self.gst1 = (1980, 4, 22, 5, 40, 15.09, 'gst')
         self.lst1 = (1980, 4, 22, 0, 40, 15.09, 'lst')
@@ -166,10 +178,18 @@ class Test_Date(unittest.TestCase):
         dat.set_daylight_savings(self.dst0)
 
         dat.set_with_tuple(self.lct0)
-        dat.to_lct()
+        d = dat.to_lct(self.zc0_1, self.dst0_1)
         t = dat.get_tuple()
         self.assertTupleEqual(t, self.lct0)
+        t = d.get_tuple()
+        self.assertTupleEqual(t, self.lct0_1)
 
+        d = dat.to_lct(self.zc0_2, self.dst0_2)
+        t = dat.get_tuple()
+        self.assertTupleEqual(t, self.lct0)
+        t = d.get_tuple()
+        self.assertTupleEqual(t, self.lct0_2)
+                
         dat.to_utc()
         t = dat.get_tuple()
         self.assertTupleEqual(t, self.utc0)
@@ -185,10 +205,18 @@ class Test_Date(unittest.TestCase):
         dat.set_daylight_savings(self.dst1)
 
         dat.set_with_tuple(self.lct1)
-        dat.to_lct()
+        d = dat.to_lct(self.zc1_1, self.dst1_1)
         t = dat.get_tuple()
         self.assertTupleEqual(t, self.lct1)
+        t = d.get_tuple()
+        self.assertTupleEqual(t, self.lct1_1)
 
+        d = dat.to_lct(self.zc1_2, self.dst1_2)
+        t = dat.get_tuple()
+        self.assertTupleEqual(t, self.lct1)
+        t = d.get_tuple()
+        self.assertTupleEqual(t, self.lct1_2)
+        
         dat.to_utc()
         t = dat.get_tuple()
         self.assertTupleEqual(t, self.utc1)

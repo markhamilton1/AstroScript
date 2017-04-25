@@ -172,7 +172,7 @@ def to_day_of_week_from_julian(jd):
     if jul is not None:
         a = (jul + 1.5) / 7.0
         day = mathutils.to_int(round((a - mathutils.to_int(a)) * 7.0))
-        return day - 1
+        return day
     return None
 
 
@@ -855,7 +855,7 @@ class AstroDate:
             self.hours, self.minutes, self.seconds = hms_from_dh(t)
             self.mode = TIME_MODE_GST
 
-    def to_lct(self):
+    def to_lct(self, zone_correction=None, daylight_saving=None):
         """
         Convert to local civil time.
         Note: this method depends on longitude being set to convert from LST.
@@ -876,7 +876,21 @@ class AstroDate:
                 self.add_days(-1)
             self.hours, self.minutes, self.seconds = hms_from_dh(t)
             self.mode = TIME_MODE_LCT
-
+        d = None
+        if zone_correction is not None:
+            d = AstroDate().alloc_with_date(self)
+            dh = zone_correction - self.zone_correction
+            d.add_hours(dh)
+        if daylight_saving is not None:
+            if d is None:
+                d = AstroDate().alloc_with_date(self)
+            if self.daylight_saving and not daylight_saving:
+                d.add_hours(-1)
+            elif not self.daylight_saving and daylight_saving:
+                d.add_hours(1)
+        if d is not None:
+            return d
+    
     def to_lst(self):
         """
         Convert to local mean sidereal time.
