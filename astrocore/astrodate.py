@@ -420,6 +420,20 @@ class AstroDate:
         """
         if self.year is not None:
             self.year += mathutils.to_int(dy, 0)
+    
+    def difference(self, date1, useZeroHours=False):
+        """
+        Calculate the absolute difference between date objects in decimal days.
+        The two objects MUST have the same mode.
+        :param date1:    the date to calculate difference with
+        :return:    the absolute difference in decimal days
+        """
+        if self.mode == date1.mode:
+            jd0 = self.get_julian(useZeroHours)
+            jd1 = date1.get_julian(useZeroHours)
+            dd = abs(jd0 - jd1)
+            return dd
+        raise ValueError, "Date modes do not match!"
 
     def get_date_of_easter(self):
         """
@@ -855,11 +869,17 @@ class AstroDate:
             self.hours, self.minutes, self.seconds = hms_from_dh(t)
             self.mode = TIME_MODE_GST
 
-    def to_lct(self, zone_correction=None, daylight_saving=None):
+    def to_lct(self, alt_zone_correction=None, alt_daylight_saving=None):
         """
         Convert to local civil time.
         Note: this method depends on longitude being set to convert from LST.
         Note: this method depends on zone_correction and daylight_savings being set to convert to LCT.
+        
+        If you want to calculate the date/time for an alternate location and return an AstroDate object
+        for that location, you can provide the alternate zone_correction and daylight_saving parameters.
+        :param alt_zone_correction:    the alternate zone_correction
+        :param alt_daylight_saving:    the alternate daylight_saving
+        :return:    the alternate date/time AstroDate object
         """
         if self.is_tdt() or self.is_lst() or self.is_gst():
             self.to_utc()
@@ -876,26 +896,31 @@ class AstroDate:
                 self.add_days(-1)
             self.hours, self.minutes, self.seconds = hms_from_dh(t)
             self.mode = TIME_MODE_LCT
-        d = None
-        if zone_correction is not None:
-            d = AstroDate().alloc_with_date(self)
-            dh = zone_correction - self.zone_correction
-            d.add_hours(dh)
-        if daylight_saving is not None:
-            if d is None:
-                d = AstroDate().alloc_with_date(self)
-            if self.daylight_saving and not daylight_saving:
-                d.add_hours(-1)
-            elif not self.daylight_saving and daylight_saving:
-                d.add_hours(1)
-        if d is not None:
-            return d
+        alt_d = None
+        if alt_zone_correction is not None:
+            alt_d = AstroDate().alloc_with_date(self)
+            dh = alt_zone_correction - self.zone_correction
+            alt_d.add_hours(dh)
+        if alt_daylight_saving is not None:
+            if alt_d is None:
+                alt_d = AstroDate().alloc_with_date(self)
+            if self.daylight_saving and not alt_daylight_saving:
+                alt_d.add_hours(-1)
+            elif not self.daylight_saving and alt_daylight_saving:
+                alt_d.add_hours(1)
+        if alt_d is not None:
+            return alt_d
     
-    def to_lst(self):
+    def to_lst(self, alt_longitude=None):
         """
         Convert to local mean sidereal time.
         Note: this method depends on longitude being set to convert to LST.
         Note: this method depends on zone_correction and daylight_savings being set to convert from LCT.
+        
+        If you want to calculate the date/time for an alternate location and return an AstroDate object
+        for that location, you can provide the alternate longitude parameter.
+        :param alt_longitude:    the alternate longitude
+        :return:    the alternate date/time AstroDate object
         """
         if self.is_tdt():
             self.to_utc()
@@ -906,11 +931,26 @@ class AstroDate:
             t += self.longitude / 15.0
             if t >= 24.0:
                 t -= 24.0
+                self.add_days(1)
             elif t < 0.0:
                 t += 24.0
+                self.add_days(-1)
             self.hours, self.minutes, self.seconds = hms_from_dh(t)
             self.mode = TIME_MODE_LST
-
+        alt_d = None
+        if alt_longitude is not None:
+            alt_d = AstroDate().alloc_with_date(self)
+            t += (alt_longitude - self.longitude) / 15.0
+            if t >= 24.0:
+                t -= 24.0
+                alt_d.add_days(1)
+            elif t < 0.0:
+                t += 24.0
+                alt_d.add_days(-1)
+            alt_d.set_with_hours(t)
+        if alt_d is not None:
+            return alt_d
+            
     def to_tdt(self):
         """
         Convert to terrestrial dynamical time.
