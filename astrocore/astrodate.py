@@ -272,6 +272,26 @@ class AstroDate:
         return d
 
     @staticmethod
+    def alloc_now_lct():
+        """
+        Allocate an AstroDate and set to now Local Civil Time.
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.now_lct()
+        return d
+
+    @staticmethod
+    def alloc_now_utc():
+        """
+        Allocate an AstroDate and set to now Coordinated Universal Time.
+        :return: the AstroDate object
+        """
+        d = AstroDate()
+        d.now_utc()
+        return d
+
+    @staticmethod
     def alloc_with_date(date):
         d = AstroDate()
         dat = date.get_tuple()
@@ -300,16 +320,6 @@ class AstroDate:
         """
         d = AstroDate()
         d.set_with_julian(jd, mode)
-        return d
-
-    @staticmethod
-    def alloc_with_now(mode='lct'):
-        """
-        Allocate an AstroDate and set to now.
-        :return: the AstroDate object
-        """
-        d = AstroDate()
-        d.now(mode)
         return d
 
     @staticmethod
@@ -547,9 +557,9 @@ class AstroDate:
         """
         return self.mode == TIME_MODE_UTC
 
-    def now(self, mode=TIME_MODE_LCT):
+    def now_lct(self):
         """
-        Get the current date and time.
+        Get the current date and time in Local Civil Time.
         """
         current = time.time()
         dat = time.localtime(current)
@@ -561,7 +571,23 @@ class AstroDate:
         self.set_minutes(dat[4])
         self.set_seconds(dat[5])
         self.set_daylight_savings(dat[8]==1)
-        self.set_mode(mode)
+        self.set_mode(TIME_MODE_LCT)
+
+    def now_utc(self):
+        """
+        Get the current date and time in Coordinated Universal Time.
+        """
+        current = time.time()
+        dat = time.gmtime(current)
+    #   dat = (year, month, day, hour, min, sec, weekday, julian day, daylight savings flag)
+        self.set_year(dat[0])
+        self.set_month(dat[1])
+        self.set_day(dat[2])
+        self.set_hours(dat[3])
+        self.set_minutes(dat[4])
+        self.set_seconds(dat[5])
+        self.set_daylight_savings(dat[8]==1)
+        self.set_mode(TIME_MODE_UTC)
 
     def set(self, year, month=1, day=1, hours=0, minutes=0, seconds=0.0, mode=TIME_MODE_UTC):
         """

@@ -42,16 +42,21 @@ An instance of the AstroDate class can be created using the default constructor.
 
 Once allocated, an instance can have the date/time set using a variety of methods. These include:
 
-* ```now(mode='lct')```
+* ```now_lct()```
+* ```now_utc()```
 * ```set(year, month=1, day=1, hours=0, minutes=0, seconds=0.0, mode='utc')```
 * ```set_with_julian(jd, mode='utc')```
 * ```set_with_tuple(dat)```
 
 Examples of using these methods are as follows:
 
-```a.now()```
+```a.now_lct()```
 
 This sets the instance with the current date and local civil time.
+
+```a.now_utc()```
+
+This sets the instance with the current date and coordinated universal time.
 
 ```a.set(1980, 6, 27, 10, 30, 45.3, 'utc')```
 
@@ -65,7 +70,8 @@ This sets the date to January 1, 1993 0:0:0.0 with either UTC (the default) or L
 
 There are a number of static methods in the AstroDate class to facilitate allocating the instance and setting it with a valid date/time. These methods include:
 
-* ```alloc_with_now(mode='lct')```
+* ```alloc_now_lct()```
+* ```alloc_now_utc()```
 * ```alloc(year, month=1, day=1, hours=0, minutes=0, seconds=0.0, mode='utc')```
 * ```alloc_with_julian(jd, mode='utc')```
 * ```alloc_with_tuple(dat)```
@@ -119,22 +125,55 @@ This covers all of the core functionality fo the ```AstroDate``` class. The foll
 
 ## Example 1:
 
-The following example gets the current LCT for Provo, Utah and prints it and each of the other time standards.
+What is the julian date and the day of week for June 30, 1954?
 
 ```python
 import astrodate as ad
 
-d = ad.AstroDate().alloc_with_now()
-d.set_daylight_savings(False)
-d.set_zone_correction(-7)
-d.set_longitude(-111.6585)
-print d.get_pretty_string()
-d.to_utc()
-print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())
-d.to_gst()
-print d.get_pretty_string()
-d.to_lst()
-print d.get_pretty_string()
-d.to_tdt()
-print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())
+jd = ad.calculate_julian(1954, 6, 30)
+print "%.2f" % jd
+dow = ad.to_day_of_week_from_julian(jd)
+print ad.DAYS_OF_WEEK[dow]
+```
+
+When I ran this I got:
+
+```
+2434923.50
+Wednesday
+```
+
+---
+
+## Example 2:
+
+What is the current time in Provo, Utah? Depending on the time of year the daylight savings flag needs to be set correctly. The time zone correction for Provo is -7 and the longitude is -111.6585 (this means west).
+
+```python
+import astrodate as ad
+
+d = ad.AstroDate().alloc_now_utc()                              # allocate the AstroDate object with current UTC time
+d.set_daylight_savings(False)                                   # set the daylight savings flag
+d.set_zone_correction(-7)                                       # set the time zone correction
+d.set_longitude(-111.6585)                                      # set the longitude
+d.to_lct()                                                      # convert the time to Local Civil Time for Provo
+print d.get_pretty_string()                                     # print a formatted date/time string
+d.to_utc()                                                      # convert the time to Coordinated Universal Time for Provo
+print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())    # print a formatted date/time string and the julian date
+d.to_gst()                                                      # convert the time to Greenwich Sidereal Time for Provo
+print d.get_pretty_string()                                     # print a formatted date/time string
+d.to_lst()                                                      # convert the time to Local Sidereal Time for Provo
+print d.get_pretty_string()                                     # print a formatted date/time string
+d.to_tdt()                                                      # convert the time to Terrestrial Dynamic Time for Provo
+print "%s  (%.2f)" % (d.get_pretty_string(), d.get_julian())    # print a formatted date/time string and the julian date
+```
+
+When I ran this I got:
+
+```
+Apr 24, 2017 16:35:56 LCT
+Apr 24, 2017 22:35:56 UTC  (2457868.44)
+Apr 24, 2017 12:48:30 GST
+Apr 24, 2017 05:21:52 LST
+Apr 24, 2017 22:37:04 TDT  (2457868.44)
 ```
