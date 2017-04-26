@@ -3,6 +3,9 @@ import math
 import mathutils
 
 
+# ftp://ftp.imcce.fr/pub/ephem/planets/vsop87
+
+
 class Position:
 
     def __init__(self):
@@ -15,10 +18,10 @@ class Position:
 
     def __calculate_cos_component(self, terms):
         v = 0.0
-        for i in xrange(0, len(terms[0])):
-            ta = terms[0][i]
-            tb = terms[1][i]
-            tc = terms[2][i]
+        for i in xrange(0, len(terms)):
+            ta = terms[i][0]
+            tb = terms[i][1]
+            tc = terms[i][2]
             v += ta * math.cos(tb + (tc * self.T))
         return v
 
@@ -29,17 +32,17 @@ class Position:
         return v
 
     def __calculate_B(self, terms):
-        tB = self.__calculate_series(terms) / 100000000.0
+        tB = self.__calculate_series(terms)
         tB *= 180.0 / math.pi
         self.B = mathutils.normalize_degrees(tB, -360.0, 360.0)
 
     def __calculate_L(self, terms):
-        tL = self.__calculate_series(terms) / 100000000.0
+        tL = self.__calculate_series(terms)
         tL *= 180.0 / math.pi
         self.L = mathutils.normalize_degrees(tL)
 
     def __calculate_R(self, terms):
-        self.R = self.__calculate_series(terms) / 100000000.0
+        self.R = self.__calculate_series(terms)
 
     def calculate_with_dateTD_terms(self, dateTD, terms):
         """
