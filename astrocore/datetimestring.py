@@ -58,7 +58,7 @@ class DateTimeString:
                 return self.year, self.month, self.day, self.hours, self.minutes, self.seconds
             elif defaultToNoon:
                 return self.year, self.month, self.day, 12, 0, 0
-            return self.year, self.month, self.day
+            return self.year, self.month, self.day, 0, 0, 0
         return None
 
     def get_time_tuple(self, defaultToNoon=False):
@@ -68,7 +68,7 @@ class DateTimeString:
             return self.hours, self.minutes, self.seconds
         elif defaultToNoon:
             return 12, 0, 0
-        return None
+        return 0, 0, 0
 
     def have_date(self):
         return not any((self.year is None, self.month is None, self.day is None))
