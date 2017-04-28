@@ -4,14 +4,16 @@ import ui
 
 
 main_view = None
+background_color = '#153236'
 label_font = ('Menlo', 12)
-label_color = 'gray'
+label_color = '#c7c7c7'
 content_font = ('Menlo', 18)
-content_color = 'orange'
+content_color = '#48bd90'
 
 
-def make_label(x, y, w, h, text="not empty", name=None, style="label"):
+def make_label(x, y, w, h, name=None, text="not empty", style="label", align=ui.ALIGN_LEFT):
     label = ui.Label(frame=(x, y, w, h), text=text)
+    label.alignment = align
     if name is not None:
         label.name = name
     if style == 'label':
@@ -56,31 +58,31 @@ class AstroDateView:
         date_textfield.text = self.date.get_pretty_string()
         v.add_subview(date_textfield)
     
-        x, y, w, h = 0, y + h, 100, 21
+        x, y, w, h = 0, y + h, 95, 21
         timezone_label = make_label(x, y, w, h, text="Time Zone")
         v.add_subview(timezone_label)
     
-        x, y, w, h = x + w, y, 50, h
-        daysave_label = make_label(x, y, w, h, text="Daylight")
+        x, y, w, h = x + w + 5, y, 50, h
+        daysave_label = make_label(x, y, w, h, text="DS", align=ui.ALIGN_CENTER)
         v.add_subview(daysave_label)
     
-        x, y, w, h = x + w, y, 150, h
+        x, y, w, h = x + w + 5, y, 145, h
         longitude_label = make_label(x, y, w, h, text="Longitude")
         v.add_subview(longitude_label)
     
-        x, y, w, h = 0, y + h, 99, 30
+        x, y, w, h = 0, y + h, 95, 30
         timezone_textfield = make_textfield(x, y, w, h, name="timezone_textfield")
         timezone_textfield.delegate = self
         timezone_textfield.text = "%d" % self.date.get_zone_correction()
         v.add_subview(timezone_textfield)
     
-        x, y, w, h = x + w + 1, y, 50, h
+        x, y, w, h = x + w + 5, y, 50, h
         daysave_switch = make_switch(x, y, w, h, name="daylight_savings_switch")
         daysave_switch.action = self.switch_changed
         daysave_switch.value = self.date.get_daylight_savings()
         v.add_subview(daysave_switch)
     
-        x, y, w, h = x + w + 1, y, 149, h
+        x, y, w, h = x + w + 5, y, 145, h
         longitude_textfield = make_textfield(x, y, w, h, name="longitude_textfield")
         longitude_textfield.delegate = self
         longitude_textfield.text = "%.5f" % self.date.get_longitude()
@@ -184,7 +186,7 @@ class AstroDateView:
 if __name__ == '__main__':
     
 
-    main_view = ui.View(background_color='black')
+    main_view = ui.View(background_color=background_color)
     
     adv = AstroDateView()
     v = adv.make_astrodate_panel()
@@ -193,3 +195,4 @@ if __name__ == '__main__':
     adv.update_astrodate_panel()
 
     main_view.present('fullscreen')
+    
