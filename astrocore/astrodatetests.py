@@ -7,7 +7,11 @@ class Test_Date(unittest.TestCase):
         self.utc_ref1 = (1980, 4, 22, 14, 36, 51.67, 'utc')
         self.gst_ref1 = (1980, 4, 22, 4, 40, 5.23, 'gst')
         self.lst_ref1 = (1980, 4, 22, 0, 24, 5.23, 'lst')
-
+        
+        self.lng_ref2 = -80.382164
+        self.utc_ref2 = (1984, 7, 8, 9, 44, 30, 'utc')
+        self.lst_ref2 = (1984, 7, 7, 23, 29, 5.97, 'lst')
+        
         self.lng0 = 64
         self.zc0 = 4
         self.zc0_1 = 7
@@ -170,6 +174,15 @@ class Test_Date(unittest.TestCase):
         dat.to_utc()
         t = dat.get_tuple()
         self.assertTupleEqual(t, self.utc_ref1)
+    
+    def test_ref2(self):
+        dat = astrodate.AstroDate()
+        dat.set_longitude(self.lng_ref2)
+        
+        dat.set_with_tuple(self.utc_ref2)
+        dat.to_lst()
+        t = dat.get_tuple()
+        self.assertTupleEqual(t, self.lst_ref2)
 
     def test_0(self):
         dat = astrodate.AstroDate()
