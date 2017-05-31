@@ -7,9 +7,8 @@ class Test_Sun(unittest.TestCase):
         pass
 
     def test_crn(self):
-        d = astrodate.AstroDate()
-        d.set_from_tuple((1975, 1, 27, 0, 0, 0.0, u'lct'))
-        crn = sun.calculate_crn_with_date(d)
+        d = astrodate.AstroDate().alloc_with_tuple((1975, 1, 27, 0, 0, 0.0, u'lct'))
+        crn = sun.calculate_crn_with_dateTD(d)
         self.assertEqual(crn, 1624)
 
 

@@ -1,7 +1,9 @@
 import unittest
 import distance
 
+
 class Test_Distance(unittest.TestCase):
+
     def setUp(self):
         pass
 
@@ -18,5 +20,12 @@ class Test_Distance(unittest.TestCase):
         v = distance.ft_to_nmi(distance.NAUTICAL_MILE_ft)
         self.assertEqual(v, 1)
 
+    def test_convert(self):
+        v = distance.convert(distance.KILOMETER_ft, 'ft', 'km')
+        self.assertEqual(v, 1)
+
+
 if __name__ == '__main__':
+
+
     unittest.main()

@@ -19,12 +19,12 @@ SUN_ESCAPE_VELOCITY = 617700.0							# m/s
 # Sun CRN Calculations
 #
 
-def calculate_crn_with_date(dat):
+def calculate_crn_with_dateTD(dat):
     jde = dat.get_julian()
-    return calculate_crn_with_julian(jde)
+    return calculate_crn_with_julianTD(jde)
 
 
-def calculate_crn_with_julian(jde):
+def calculate_crn_with_julianTD(jde):
     """
     Calculate the Carrington rotation number (CRN).
     :param jde: 
@@ -233,10 +233,10 @@ class Position:
         return l
 
     def get_x(self):
-        return x
+        return self.x
 
     def get_y(self):
-        return y
+        return self.y
 
     def get_z(self):
-        return z
+        return self.z
