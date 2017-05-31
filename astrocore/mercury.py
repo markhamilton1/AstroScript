@@ -6883,7 +6883,7 @@ def calculate_position_with_dateTD(dateTD):
 
 def calculate_position_with_julianTD(jde):
     p = Position()
-    p.calculate_with_julian_terms(jde, TERMS_VSOP87D)
+    p.calculate_with_julianTD_terms(jde, TERMS_VSOP87D)
     return p
 
 

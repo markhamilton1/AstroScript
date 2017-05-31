@@ -1736,9 +1736,9 @@ def calculate_position_with_dateTD(dateTD):
     return p
 
 
-def calculate_position_with_julian(jde):
+def calculate_position_with_julianTD(jde):
     p = Position()
-    p.calculate_with_julian_terms(jde, TERMS_VSOP87D)
+    p.calculate_with_julianTD_terms(jde, TERMS_VSOP87D)
     return p
 
 
@@ -1746,7 +1746,7 @@ if __name__ == "__main__":
 
 
     jde = 2457855.5
-    p = calculate_position_with_julian(jde)
+    p = calculate_position_with_julianTD(jde)
     print("Latitude0: {}".format(p.get_latitude0()))
     print("Latitude: {}".format(p.get_latitude()))
     print("Longitude0: {}".format(p.get_longitude0()))

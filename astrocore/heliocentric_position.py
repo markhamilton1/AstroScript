@@ -18,7 +18,7 @@ class Position:
 
     def __calculate_cos_component(self, terms):
         v = 0.0
-        for i in xrange(0, len(terms)):
+        for i in range(0, len(terms)):
             ta = terms[i][0]
             tb = terms[i][1]
             tc = terms[i][2]
@@ -27,7 +27,7 @@ class Position:
 
     def __calculate_series(self, terms):
         v = 0.0
-        for i in xrange(len(terms) - 1, -1, -1):
+        for i in range(len(terms) - 1, -1, -1):
             v += (v * self.T) + self.__calculate_cos_component(terms[i])
         return v
 
@@ -50,11 +50,11 @@ class Position:
         :param dat: the date (in dynamical time)
         """
         if dateTD.is_td():
-            self.calculate_with_julian_terms(dateTD.get_julian(), terms)
+            self.calculate_with_julianTD_terms(dateTD.get_julian(), terms)
         else:
             raise ValueError, "Invalid date mode! Must be TD."
 
-    def calculate_with_julian_terms(self, jde, terms):
+    def calculate_with_julianTD_terms(self, jde, terms):
         toRad = math.pi / 180.0
         self.T = (jde - astrodate.J2000) / 365250.0
         self.__calculate_L(terms[0])

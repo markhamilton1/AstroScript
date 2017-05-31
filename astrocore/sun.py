@@ -114,13 +114,13 @@ class Position:
                 jde0 = 2451900.05952 + (365242.74049 * yr) + (-0.06223 * yr2) + (-0.00823 * yr3) + (0.00032 * yr4)
         return jde0
 
-    def calculate_eccentricity_of_orbit_with_julian(self, jde1900):
+    def calculate_eccentricity_of_orbit_with_julianTD(self, jde1900):
         return 0.01675104 + (jde1900 * (-0.0000418 + (jde1900 * -0.000000126)))
 
-    def calculate_ecliptic_longitude_of_perigee_with_julian(self, jde1900):
+    def calculate_ecliptic_longitude_of_perigee_with_julianTD(self, jde1900):
         return 281.2208444 + (jde1900 * (1.719175 + (jde1900 * 0.000452778)))
 
-    def calculate_mean_ecliptic_longitude_with_julian(self, jde1900):
+    def calculate_mean_ecliptic_longitude_with_julianTD(self, jde1900):
         return 279.6966778 + (jde1900 * (36000.76892 + (jde1900 * 0.0003025)))
 
     def calculate_position_2000_with_dateTD(self, dateTD):

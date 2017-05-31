@@ -118,7 +118,7 @@ class Nutation:
         # calculate the nutation
         tNUTATION_IN_LONGITUDE = 0.0
         tNUTATION_IN_OBLIQUITY = 0.0
-        for i in xrange(0, N_TERMS):
+        for i in range(0, N_TERMS):
             a = 0.0
             if C_MEMS[i] != 0.0:
                 a += C_MEMS[i] * MEMS
@@ -2640,9 +2640,9 @@ def calculate_position_with_dateTD(dateTD):
     return p
 
 
-def calculate_position_with_julian(jde):
+def calculate_position_with_julianTD(jde):
     p = Position()
-    p.calculate_with_julian_terms(jde, TERMS_VSOP87D)
+    p.calculate_with_julianTD_terms(jde, TERMS_VSOP87D)
     return p
 
 
@@ -2661,7 +2661,7 @@ if __name__ == "__main__":
 
     print
 
-    p = calculate_position_with_julian(jde)
+    p = calculate_position_with_julianTD(jde)
     print("Latitude0: {}".format(p.get_latitude0()))
     print("Latitude: {}".format(p.get_latitude()))
     print("Longitude0: {}".format(p.get_longitude0()))
