@@ -18,5 +18,5 @@ new_suite = unittest.TestSuite(tests)
 
 if __name__ == "__main__":
 
-    unittest.main()
+    unittest.main(verbosity=2)
 
