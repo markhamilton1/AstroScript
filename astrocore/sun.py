@@ -118,14 +118,14 @@ class Position:
     def calculate_mean_ecliptic_longitude_with_julianTD(self, jde1900):
         return 279.6966778 + (jde1900 * (36000.76892 + (jde1900 * 0.0003025)))
 
-    def calculate_position_with_dateTD(self, dateTD, useSun2000=False):
+    def calculate_with_dateTD(self, dateTD, useSun2000=False):
         if dateTD is None:
             raise ValueError, "Date (TD) is required!"
         dateTD.to_td()
         jde = dateTD.get_julian()
-        self.calculate_position_with_julianTD(jde, useSun2000)
+        self.calculate_with_julianTD(jde, useSun2000)
 
-    def calculate_position_with_julianTD(self, jde, useSun2000=False):
+    def calculate_with_julianTD(self, jde, useSun2000=False):
         self.earth_position = earth.calculate_position_with_julianTD(jde)
         self.earth_nutation = earth.Nutation()
         self.earth_nutation.calculate_with_julianTD(jde)
@@ -142,7 +142,7 @@ class Position:
             djde = 0.0
             while True:
                 jde += djde
-                self.calculate_position_with_julianTD(jde, useSun2000)
+                self.calculate_with_julianTD(jde, useSun2000)
                 ap_long = self.get_apparent_longitude()
                 djde = 58.0 * math.sin(season - ap_long) * math.pi / 180.0
                 adjde = abs(djde)
@@ -226,13 +226,13 @@ class Position:
 
 def calculate_position_with_dateTD(dateTD):
     p = Position()
-    p.calculate_position_with_dateTD(dateTD)
+    p.calculate_with_dateTD(dateTD)
     return p
 
 
 def calculate_position_with_julianTD(jde):
     p = Position()
-    p.calculate_position_with_julianTD(jde)
+    p.calculate_with_julianTD(jde)
     return p
 
 

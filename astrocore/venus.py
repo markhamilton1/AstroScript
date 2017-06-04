@@ -1731,21 +1731,21 @@ TERMS_VSOP87D = [L_VSOP87D, B_VSOP87D, R_VSOP87D]
 
 
 def calculate_position_with_dateTD(dateTD):
-    p = Position()
-    p.calculate_with_dateTD_terms(dateTD, TERMS_VSOP87D)
+    p = Position(TERMS_VSOP87D)
+    p.calculate_with_dateTD(dateTD)
     return p
 
 
 def calculate_position_with_julianTD(jde):
-    p = Position()
-    p.calculate_with_julianTD_terms(jde, TERMS_VSOP87D)
+    p = Position(TERMS_VSOP87D)
+    p.calculate_with_julianTD(jde)
     return p
 
 
 if __name__ == "__main__":
 
 
-    jde = 2457855.5
+    jde = astrodate.calculate_julian(1998, 1, 1)
     p = calculate_position_with_julianTD(jde)
     print("Latitude0: {}".format(p.get_latitude0()))
     print("Latitude: {}".format(p.get_latitude()))

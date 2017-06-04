@@ -4037,14 +4037,14 @@ TERMS_VSOP87D = [L_VSOP87D, B_VSOP87D, R_VSOP87D]
 
 
 def calculate_position_with_dateTD(dateTD):
-    p = Position()
-    p.calculate_with_dateTD_terms(dateTD, TERMS_VSOP87D)
+    p = Position(TERMS_VSOP87D)
+    p.calculate_with_dateTD(dateTD)
     return p
 
 
 def calculate_position_with_julianTD(jde):
-    p = Position()
-    p.calculate_with_julianTD_terms(jde, TERMS_VSOP87D)
+    p = Position(TERMS_VSOP87D)
+    p.calculate_with_julianTD(jde)
     return p
 
 
