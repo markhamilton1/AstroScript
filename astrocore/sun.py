@@ -86,32 +86,27 @@ class Position:
 
     def calculate_approximate_season_start(self, year, season):
         jde0 = 0.0
-        if (year >= -1000.0) and (year < 1000.0):
+        year = int(year)
+        if (year >= -1000) and (year < 1000):
             yr = year / 1000.0
-            yr2 = yr * yr
-            yr3 = yr2 * yr
-            yr4 = yr3 * yr
             if season == VERNAL_EQUINOX:
-                jde0 = 1721139.29189 + (365242.1374 * yr) + (0.06134 * yr2) + (0.00111 * yr3) + (-0.00071 * yr4)
+                jde0 = (((((((-0.00071 * yr) + 0.00111) * yr) + 0.06134) * yr) + 365242.1374) * yr) + 1721139.29189
             elif season == SUMMER_SOLSTICE:
-                jde0 = 1721233.25401 + (365241.72562 * yr) + (-0.05323 * yr2) + (0.00907 * yr3) + (0.00025 * yr4)
+                jde0 = (((((((0.00025 * yr) + 0.00907) * yr) - 0.05323) * yr) + 365241.72562) * yr) + 1721233.25401
             elif season == AUTUMNAL_EQUINOX:
-                jde0 = 1721325.70455 + (365242.49558 * yr) + (-0.11677 * yr2) + (-0.00297 * yr3) + (0.00074 * yr4)
+                jde0 = (((((((0.00074 * yr) - 0.00297) * yr) - 0.11677) * yr) + 365242.49558) * yr) + 1721325.70455
             elif season == WINTER_SOLSTICE:
-                jde0 = 1721414.39987 + (365242.88257 * yr) + (-0.00769 * yr2) + (-0.00933 * yr3) + (-0.00006 * yr4)
-        elif (year >= 1000.0) and (year <= 3000.0):
-            yr = (year - 2000.0) / 1000.0
-            yr2 = yr * yr
-            yr3 = yr2 * yr
-            yr4 = yr3 * yr
+                jde0 = (((((((-0.00006 * yr) - 0.00933) * yr) - 0.00769) * yr) + 365242.88257) * yr) + 1721414.39987
+        elif (year >= 1000) and (year <= 3000):
+            yr = (year - 2000) / 1000.0
             if season == VERNAL_EQUINOX:
-                jde0 = 2451623.80984 + (365242.37404 * yr) + (0.05169 * yr2) + (-0.00411 * yr3) + (-0.00057 * yr4)
+                jde0 = (((((((-0.00057 * yr) - 0.00411) * yr) + 0.05169) * yr) + 365242.37404) * yr) + 2451623.80984
             elif season == SUMMER_SOLSTICE:
-                jde0 = 2451716.56767 + (365241.62603 * yr) + (0.00325 * yr2) + (0.00888 * yr3) + (-0.0003 * yr4)
+                jde0 = (((((((-0.0003 * yr) + 0.00888) * yr) + 0.00325) * yr) + 365241.62603) * yr) + 2451716.56767
             elif season == AUTUMNAL_EQUINOX:
-                jde0 = 2451810.21715 + (365242.01767 * yr) + (-0.11575 * yr2) + (0.00337 * yr3) + (0.00078 * yr4)
+                jde0 = (((((((0.00078 * yr) + 0.00337) * yr) - 0.11575) * yr) + 365242.01767) * yr) + 2451810.21715
             elif season == WINTER_SOLSTICE:
-                jde0 = 2451900.05952 + (365242.74049 * yr) + (-0.06223 * yr2) + (-0.00823 * yr3) + (0.00032 * yr4)
+                jde0 = (((((((0.00032 * yr) - 0.00823) * yr) - 0.06223) * yr) + 365242.74049) * yr) + 2451900.05952
         return jde0
 
     def calculate_eccentricity_of_orbit_with_julianTD(self, jde1900):
@@ -123,13 +118,15 @@ class Position:
     def calculate_mean_ecliptic_longitude_with_julianTD(self, jde1900):
         return 279.6966778 + (jde1900 * (36000.76892 + (jde1900 * 0.0003025)))
 
-    def calculate_position_2000_with_dateTD(self, dateTD):
+    def calculate_position_with_dateTD(self, dateTD, useSun2000=False):
         if dateTD is None:
             raise ValueError, "Date (TD) is required!"
         dateTD.to_td()
         jde = dateTD.get_julian()
-        self.earth_position = earth.Position()
-        self.earth_position.calculate_with_julianTD(jde, True)
+        self.calculate_position_with_julianTD(jde, useSun2000)
+
+    def calculate_position_with_julianTD(self, jde, useSun2000=False):
+        self.earth_position = earth.calculate_position_with_julianTD(jde)
         self.earth_nutation = earth.Nutation()
         self.earth_nutation.calculate_with_julianTD(jde)
         t = (jde - astrodate.J2000) / 36525.0
@@ -137,41 +134,23 @@ class Position:
         self.dL_FK5 = -0.09033 / 3600.0
         self.dL_ABERRATION = self.calculate_aberration_with_julianTD(jde) / 3600.0
         self.dB = (0.03916 * (math.cos(Lp) - math.sin(Lp))) / 3600.0
-        self.calculate_xyz(True)
+        self.calculate_xyz(useSun2000)
 
-    def calculate_position_with_dateTD(self, dateTD):
-        if dateTD is None:
-            raise ValueError, "Date (TD) is required!"
-        dateTD.to_td()
-        jde = dateTD.get_julian()
-        self.calculate_position_with_julianTD(jde)
-
-    def calculate_position_with_julianTD(self, jde):
-        self.earth_position = earth.Position()
-        self.earth_position.calculate_with_julianTD(jde_td, False)
-        self.earth_nutation = earth.Nutation()
-        self.earth_nutation.calculate_with_julianTD(jde_td)
-        t = (jde - astrodate.J2000) / 36525.0
-        Lp = (self.get_true_longitude() + (((-0.00031 * t) - 1.397) * t)) * math.pi / 180.0
-        self.dL_FK5 = -0.09033 / 3600.0
-        self.dL_ABERRATION = self.calculate_aberration_with_julianTD(jde) / 3600.0
-        self.dB = (0.03916 * (math.cos(Lp) - math.sin(Lp))) / 3600.0
-        self.calculate_xyz(False)
-
-    def calculate_season_start(self, year, season):
+    def calculate_season_start(self, year, season, useSun2000=False):
         jde = self.calculate_approximate_season_start(year, season)
         if jde != 0.0:
             djde = 0.0
             while True:
                 jde += djde
-                self.calculate_position_with_julianTD(jde)
-                djde = 58.0 * math.sin(season - self.get_apparent_longitude()) * math.pi / 180.0
+                self.calculate_position_with_julianTD(jde, useSun2000)
+                ap_long = self.get_apparent_longitude()
+                djde = 58.0 * math.sin(season - ap_long) * math.pi / 180.0
                 adjde = abs(djde)
                 if adjde < 0.000005:
                     break
         return jde
 
-    def calculate_xyz(self, useSun2000):
+    def calculate_xyz(self, useSun2000=False):
         toRad = math.pi / 180.0
         lat = self.get_latitude() * toRad
         lng = self.get_true_longitude() * toRad
@@ -193,7 +172,10 @@ class Position:
             self.z = r * ((cosLatSinLong * sinMObl) - (sinLat * cosMObl))
 
     def get_apparent_longitude(self):
-        l = self.get_true_longitude() + self.earth_nutation.get_nutation_in_longitude() + self.dL_ABERRATION
+        tr_long = self.get_true_longitude()
+        ea_nut = self.earth_nutation.get_nutation_in_longitude()
+        aber = self.dL_ABERRATION
+        l = tr_long + ea_nut + aber
         if l >= 360.0:
             l -= 360.0
         return l
@@ -240,3 +222,55 @@ class Position:
 
     def get_z(self):
         return self.z
+
+
+def calculate_position_with_dateTD(dateTD):
+    p = Position()
+    p.calculate_position_with_dateTD(dateTD)
+    return p
+
+
+def calculate_position_with_julianTD(jde):
+    p = Position()
+    p.calculate_position_with_julianTD(jde)
+    return p
+
+
+if __name__ == "__main__":
+
+
+    jde = 2448908.5
+    p = calculate_position_with_julianTD(jde)
+    print("Latitude0: {}".format(p.get_latitude0()))
+    print("Latitude: {}".format(p.get_latitude()))
+    print("Apparent Longitude: {}".format(p.get_apparent_longitude()))
+    print("True Longitude0: {}".format(p.get_true_longitude0()))
+    print("True Longitude: {}".format(p.get_true_longitude()))
+    print("Radius: {}".format(p.get_earth_sun_radius()))
+    
+    print
+
+    year = 2017
+    ad = astrodate.AstroDate().alloc_now_utc()
+
+    jdve = p.calculate_season_start(year, VERNAL_EQUINOX)
+    ad.set_with_julian(jdve, astrodate.TIME_MODE_TDT)
+    ve = ad.get_pretty_string()
+    print("Vernal Equinox: {} ({})".format(ve, jdve))
+
+    jdss = p.calculate_season_start(year, SUMMER_SOLSTICE)
+    ad.set_with_julian(jdss, astrodate.TIME_MODE_TDT)
+    ss = ad.get_pretty_string()
+    print("Summer Solstice: {} ({})".format(ss, jdss))
+
+    jdae = p.calculate_season_start(year, AUTUMNAL_EQUINOX)
+    ad.set_with_julian(jdae, astrodate.TIME_MODE_TDT)
+    ae = ad.get_pretty_string()
+    print("Autumnal Equinox: {} ({})".format(ae, jdae))
+
+    jdws = p.calculate_season_start(year, WINTER_SOLSTICE)
+    ad.set_with_julian(jdws, astrodate.TIME_MODE_TDT)
+    ws = ad.get_pretty_string()
+    print("Winter Solstice: {} ({})".format(ws, jdws))
+    
+    

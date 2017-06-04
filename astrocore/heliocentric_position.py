@@ -27,8 +27,11 @@ class Position:
 
     def __calculate_series(self, terms):
         v = 0.0
-        for i in range(len(terms) - 1, -1, -1):
-            v += (v * self.T) + self.__calculate_cos_component(terms[i])
+        t = 0.0
+        for i in range(0, len(terms)):
+            c = self.__calculate_cos_component(terms[i])
+            t = self.T ** i
+            v += t * c
         return v
 
     def __calculate_B(self, terms):
