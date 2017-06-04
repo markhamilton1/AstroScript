@@ -14,7 +14,7 @@ class Test_Jupiter(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.9894618542824553)
+        self.assertAlmostEqual(latitude, -0.9894618542824553, 14)
         self.assertEqual(longitude, 329.7713376559485)
         self.assertEqual(radius, 5.020988316386657)
 
@@ -23,7 +23,7 @@ class Test_Jupiter(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 0.20051130112254614)
+        self.assertAlmostEqual(latitude, 0.20051130112254614, 14)
         self.assertEqual(longitude, 271.7299034774712)
         self.assertEqual(radius, 5.247685790242188)
 
@@ -32,7 +32,7 @@ class Test_Jupiter(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 1.151630375278742)
+        self.assertAlmostEqual(latitude, 1.151630375278742, 14)
         self.assertEqual(longitude, 218.56792143641388)
         self.assertEqual(radius, 5.432242090031535)
 

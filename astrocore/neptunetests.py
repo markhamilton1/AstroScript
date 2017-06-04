@@ -14,7 +14,7 @@ class Test_Neptune(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 0.3745111145247912)
+        self.assertAlmostEqual(latitude, 0.3745111145247912, 14)
         self.assertEqual(longitude, 299.546754568677)
         self.assertEqual(radius, 30.145211309963376)
 
@@ -23,7 +23,7 @@ class Test_Neptune(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.2952703665730311)
+        self.assertAlmostEqual(latitude, -0.2952703665730311, 14)
         self.assertEqual(longitude, 321.4728593378659)
         self.assertEqual(radius, 30.04242600523542)
 
@@ -32,7 +32,7 @@ class Test_Neptune(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.9264709585814667)
+        self.assertAlmostEqual(latitude, -0.9264709585814667, 14)
         self.assertEqual(longitude, 343.56386354496607)
         self.assertEqual(radius, 29.944701179744804)
 

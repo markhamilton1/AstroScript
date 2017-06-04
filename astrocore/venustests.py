@@ -14,7 +14,7 @@ class Test_Venus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 0.8454455696475623)
+        self.assertAlmostEqual(latitude, 0.8454455696475623, 14)
         self.assertEqual(longitude, 91.06983954587166)
         self.assertEqual(radius, 0.719596069699695)
 
@@ -23,7 +23,7 @@ class Test_Venus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 3.253578332266348)
+        self.assertAlmostEqual(latitude, 3.253578332266348, 14)
         self.assertEqual(longitude, 183.34794389977853)
         self.assertEqual(radius, 0.7202648234694472)
 
@@ -32,7 +32,7 @@ class Test_Venus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -1.1077565827266298)
+        self.assertAlmostEqual(latitude, -1.1077565827266298, 14)
         self.assertEqual(longitude, 275.8648465097962)
         self.assertEqual(radius, 0.7273119838277067)
 

@@ -14,7 +14,7 @@ class Test_Mercury(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 6.194758510915122)
+        self.assertAlmostEqual(latitude, 6.194758510915122, 14)
         self.assertEqual(longitude, 166.25446998252286)
         self.assertEqual(radius, 0.3689447062980261)
 
@@ -23,7 +23,7 @@ class Test_Mercury(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -6.890601940330963)
+        self.assertAlmostEqual(latitude, -6.890601940330963, 14)
         self.assertEqual(longitude, 308.0020711769773)
         self.assertEqual(radius, 0.4265244131415521)
 
@@ -32,7 +32,7 @@ class Test_Mercury(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 5.147097409406132)
+        self.assertAlmostEqual(latitude, 5.147097409406132, 14)
         self.assertEqual(longitude, 181.4019565130787)
         self.assertEqual(radius, 0.3893565329208419)
 

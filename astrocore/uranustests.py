@@ -14,7 +14,7 @@ class Test_Uranus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.6282134140759301)
+        self.assertAlmostEqual(latitude, -0.6282134140759301, 14)
         self.assertEqual(longitude, 308.40566409553765)
         self.assertEqual(radius, 19.844051001140322)
 
@@ -23,7 +23,7 @@ class Test_Uranus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.7703622749278436)
+        self.assertAlmostEqual(latitude, -0.7703622749278436, 14)
         self.assertEqual(longitude, 347.91917802519964)
         self.assertEqual(radius, 20.095402766570462)
 
@@ -32,7 +32,7 @@ class Test_Uranus(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -0.5625095080138525)
+        self.assertAlmostEqual(latitude, -0.5625095080138525, 14)
         self.assertEqual(longitude, 27.321376904656642)
         self.assertEqual(radius, 19.902712546938368)
 

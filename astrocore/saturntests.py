@@ -14,7 +14,7 @@ class Test_Saturn(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, -2.4798143896218066)
+        self.assertAlmostEqual(latitude, -2.4798143896218066, 14)
         self.assertEqual(longitude, 19.779644001582255)
         self.assertEqual(radius, 9.366709083172355)
 
@@ -23,7 +23,7 @@ class Test_Saturn(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 1.5827657392464183)
+        self.assertAlmostEqual(latitude, 1.5827657392464183, 14)
         self.assertEqual(longitude, 153.22998324863892)
         self.assertEqual(radius, 9.266136560404153)
 
@@ -32,7 +32,7 @@ class Test_Saturn(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 0.9829772740784639)
+        self.assertAlmostEqual(latitude, 0.9829772740784639, 14)
         self.assertEqual(longitude, 270.51396993626645)
         self.assertEqual(radius, 10.064742444221443)
 

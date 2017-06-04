@@ -28,7 +28,7 @@ class Test_Earth(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 2.1651204901319734e-05)
+        self.assertAlmostEqual(latitude, 2.1651204901319734e-05, 14)
         self.assertEqual(longitude, 100.363323142225)
         self.assertEqual(radius, 0.9833333560780444)
 
@@ -37,7 +37,7 @@ class Test_Earth(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 0.00011901318043573914)
+        self.assertAlmostEqual(latitude, 0.00011901318043573914, 14)
         self.assertEqual(longitude, 99.92973010197568)
         self.assertEqual(radius, 0.983289338510011)
 
@@ -46,7 +46,7 @@ class Test_Earth(unittest.TestCase):
         latitude = p.get_latitude()
         longitude = p.get_longitude()
         radius = p.get_radius()
-        self.assertEqual(latitude, 4.95339099701003e-05)
+        self.assertAlmostEqual(latitude, 4.95339099701003e-05, 14)
         self.assertEqual(longitude, 100.51614552278916)
         self.assertEqual(radius, 0.9833010058152097)
 
