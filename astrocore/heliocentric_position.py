@@ -4,7 +4,11 @@ The original planetary ephemeris can be found at:
 
 ftp://ftp.imcce.fr/pub/ephem/planets/vsop87
 
-This implementation uses the heliocentric ephemerides of the VSOP87D files. 
+This implementation uses the heliocentric ephemerides of the VSOP87D files.
+
+The computed positions of the planets can be compared to the values returned at this website:
+
+https://omniweb.gsfc.nasa.gov/coho/helios/planet.html
 """
 
 import astrodate
